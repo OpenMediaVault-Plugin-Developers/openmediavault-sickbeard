@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+. /etc/default/openmediavault
+. /usr/share/openmediavault/scripts/helper-functions
+
+case "$1" in
+configure)
+    if ! omv_config_exists "/config/services/sickbeard"; then
+        echo "Initial configuration."
+        object="<enable>0</enable>"
+        object="${object}<showtab>0</showtab>"
+        omv_config_add_element "/config/services" "sickbeard" "${object}" true
+    fi
+
+    if ! grep -q "^sickbeard:" /etc/passwd; then
+        echo "Adding sickbeard user..."
+        useradd --no-create-home --groups users --no-user-group --shell /usr/sbin/nologin sickbeard
+    else
+        echo "sickbeard user already exists."
+    fi
+
+    chown -R sickbeard:users /opt/sickbeard
+
+    ;;
+abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+*)
+    echo "postinst called with unknown argument" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

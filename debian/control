@@ -1,0 +1,18 @@
+Source: openmediavault-sickbeard
+Section: misc
+Priority: optional
+Maintainer: OpenMediaVault Plugin Developers <plugins@omv-extras.org>
+Build-Depends: debhelper (>= 7 )
+Standards-Version: 3.9.3
+
+Package: openmediavault-sickbeard
+Architecture: all
+Depends: ${misc:Depends}, openmediavault (>= 0.5), openmediavault (<< 0.6),
+  python, python-cheetah, git
+Description: OpenMediaVault Sick Beard plugin
+ Sick Beard is a PVR for newsgroup users (with limited torrent support).
+ It watches for new episodes of your favorite shows and when they are
+ posted it downloads them, sorts and renames them, and optionally
+ generates metadata for them. It currently supports NZBs.org, NZBMatrix,
+ NZBs'R'Us, Newzbin, Womble's Index, NZB.su, TVTorrents and EZRSS and
+ retrieves show information from theTVDB.com and TVRage.com.
