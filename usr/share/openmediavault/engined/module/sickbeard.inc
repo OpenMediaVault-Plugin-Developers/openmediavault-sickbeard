@@ -60,7 +60,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
                 $cmd = "/etc/init.d/sickbeard status";
                 $this->exec($cmd, $output);
                 if (strpos($output[0], 'failed!') > 0);
-                        $cmd = "update-rc.d sickbeard enable && service sickbeard start 2>&1";
+                        $cmd = "update-rc.d sickbeard defaults && service sickbeard start 2>&1";
                         $this->exec($cmd, $output);
     }
 
