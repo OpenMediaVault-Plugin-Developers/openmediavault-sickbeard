@@ -1,3 +1,9 @@
+openmediavault-sickbeard (0.5.3) stable; urgency=low
+
+  * Make service start at boot - try #2
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 17 Dec 2013 11:08:27 -0500
+
 openmediavault-sickbeard (0.5.2) stable; urgency=low
 
   * Make service start at boot
