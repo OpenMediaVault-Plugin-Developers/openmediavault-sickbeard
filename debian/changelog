@@ -1,11 +1,18 @@
+openmediavault-sickbeard (0.5.2) stable; urgency=low
+
+  * Make service start at boot
+  * Add locale file
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 17 Dec 2013 06:48:27 -0500
+
 openmediavault-sickbeard (0.5.1) stable; urgency=low
 
   * Fix status
 
- -- Aaron Murray <aaron@omv-extras.org>  Tue, 10 Dec 2013 07:09:27 -0500
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 10 Dec 2013 07:09:27 -0500
 
 openmediavault-sickbeard (0.5) stable; urgency=low
 
   * Initial release
 
- -- Aaron Murray <aaron@omv-extras.org>  Mon, 09 Dec 2013 15:26:27 -0500
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Mon, 09 Dec 2013 15:26:27 -0500
