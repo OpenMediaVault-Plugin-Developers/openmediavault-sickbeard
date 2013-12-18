@@ -78,9 +78,8 @@ case "$1" in
         fi
         ;;
 
-    restart|force-reload)stop)
+    restart|force-reload)
         if is_running; then
-            echo "Stopping $DESC"
             start-stop-daemon --stop --pidfile $PID_FILE --retry 15
         fi
         echo "Restarting $DESC"
