@@ -57,11 +57,8 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
         if(FALSE === boolval($object['enable']))
             return;
 
-                $cmd = "/etc/init.d/sickbeard status";
-                $this->exec($cmd, $output);
-                if (strpos($output[0], 'failed!') > 0);
-                        $cmd = "update-rc.d sickbeard defaults && service sickbeard start 2>&1";
-                        $this->exec($cmd, $output);
+                $initd = new OMVSysVInitScript("sickbeard", TRUE);
+                $initd->exec();
     }
 
     public function stopService() {
@@ -74,11 +71,8 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
         if(TRUE === boolval($object['enable']))
             return;
 
-                $cmd = "/etc/init.d/sickbeard status";
-                $this->exec($cmd, $output);
-                if (strpos($output[0], 'is running') > 0);
-                        $cmd = "service sickbeard stop && update-rc.d sickbeard disable 2>&1";
-                        $this->exec($cmd, $output);
+                $initd = new OMVSysVInitScript("sickbeard", FALSE);
+                $initd->exec();
     }
 
     public function bindListeners(OMVNotifyDispatcher $dispatcher) {
