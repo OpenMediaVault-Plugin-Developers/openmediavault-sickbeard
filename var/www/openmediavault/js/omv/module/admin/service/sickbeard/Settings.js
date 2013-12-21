@@ -75,6 +75,57 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 boxLabel   : _("Show tab containing Sickbeard web interface frame."),
                 checked    : false
             },{
+                xtype      : "combo",
+                name       : "sb_repo",
+                fieldLabel : _("Repository"),
+                queryMode  : "local",
+                store      : Ext.create("Ext.data.ArrayStore", {
+                    fields : [
+                        "value",
+                        "text"
+                    ],
+                    data   : [
+                        [ 0, _("Sickbeard - Main") ],
+                        [ 1, _("Sickbeard - Torrents") ]
+                    ]
+                }),
+                displayField  : "text",
+                valueField    : "value",
+                allowBlank    : false,
+                editable      : false,
+                triggerAction : "all",
+                value         : 0,
+                plugins       : [{
+                    ptype : "fieldinfo",
+                    text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
+                }]
+            },{
+
+                xtype      : "combo",
+                name       : "sb_branch",
+                fieldLabel : _("Branch"),
+                queryMode  : "local",
+                store      : Ext.create("Ext.data.ArrayStore", {
+                    fields : [
+                        "value",
+                        "text"
+                    ],
+                    data   : [
+                        [ 0, _("Master") ],
+                        [ 1, _("Develop") ]
+                    ]
+                }),
+                displayField  : "text",
+                valueField    : "value",
+                allowBlank    : false,
+                editable      : false,
+                triggerAction : "all",
+                value         : 0,
+                plugins       : [{
+                    ptype : "fieldinfo",
+                    text  : _("The branch you want to use.")
+                }]
+            },{
                 xtype   : "button",
                 name    : "opensickbeard",
                 text    : _("Sickbeard Web Interface"),
@@ -85,7 +136,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 }
             },{
                 border: false,
-                html: "<br />"                
+                html: "<br />"
             }]
         }];
     }

@@ -35,53 +35,81 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         $this->registerMethod('setSettings');
     }
 
-    function getSettings($params, $context) {
+    public function getSettings($params, $context) {
         global $xmlConfig;
-
-        // Validate the RPC caller context.
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
-
-        // Get configuration object
         $object = $xmlConfig->get("//services/sickbeard");
-        if (is_null($object))
+        if(is_null($object))
             throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, "//services/sickbeard");
 
-        // Modify result data
         $object['enable']  = boolval($object['enable']);
         $object['showtab'] = boolval($object['showtab']);
-
+        $object['sb_branch'] = intval($object['sb_branch']);
+        if($object['sb_repo'] != '') {
+            $object['sb_repo'] = intval($object['sb_repo']);
+        }
         return $object;
     }
 
-    function setSettings($params, $context) {
+    public function setSettings($params, $context) {
         global $xmlConfig;
-
-        // Validate the RPC caller context.
+        $oldObject = $xmlConfig->get("//services/sickbeard");
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
-
-        // Validate the parameters of the RPC service method.
         $this->validateMethodParams($params, '{
-            "type"       : "object",
+            "type" : "object",
             "properties" : {
-                "enable"  : { "type" : "boolean" },
-                "showtab" : { "type" : "boolean" }
+                "enable"        : { "type" : "boolean" },
+                "showtab"       : { "type" : "boolean" },
+                "sb_branch"     : { "type" : "integer","enum":[0,1]},
+                "sb_repo"       : { "type" : "integer","enum":[0,1]}
             }
         }');
 
-        // Prepare configuration data
+
+        if($params['sb_repo'] == 1 && $params['sb_branch'] == 1)
+            throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");
+
+        if($params['sb_repo'] != $oldObject['sb_repo']) {
+            //throw new OMVException(OMVErrorMsg::E_CONFIG_SET_OBJECT_FAILED, $params['sb_repo'] . "-" . $oldObject['sb_repo']);
+            if($params['sb_repo'] == 0) {
+                $this->exec("/etc/init.d/sickbeard swap https://github.com/midgetspy/Sick-Beard.git master");
+                $params['sb_branch'] = 0;
+            }
+            elseif($params['sb_repo'] == 1) {
+                $this->exec("/etc/init.d/sickbeard swap https://github.com/xbianonpi/Sick-Beard-TPB.git");
+                $params['sb_branch'] = 0;
+            }
+        }
+        // throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, $params['sb_repo'] . "-" . $oldObject['sb_repo']);
+        if($params['sb_repo'] == $oldObject['sb_repo']) {
+            if($params['sb_repo'] == 0) {
+                if($params['sb_branch'] != $oldObject['sb_branch']) {
+                    if($params['sb_branch'] == 0)
+                    {
+                        $this->exec("/etc/init.d/sickbeard master");
+                    }
+                    if($params['sb_branch'] == 1) {
+                        $this->exec("/etc/init.d/sickbeard develop");
+                    }
+                }
+            }
+        }
+
         $object = array(
-            "enable"  => array_boolval($params, 'enable'),
-            "showtab" => array_boolval($params, 'showtab'),
+            "enable"            => array_boolval($params, 'enable'),
+            "showtab"           => array_boolval($params, 'showtab'),
+            "sb_branch"         => $params['sb_branch'],
+            "sb_repo"           => $params['sb_repo']
         );
 
-        // Set configuration object
-        if (false === $xmlConfig->replace("//services/sickbeard", $object))
+        if(false === $xmlConfig->replace("//services/sickbeard", $object)) {
             throw new OMVException(OMVErrorMsg::E_CONFIG_SET_OBJECT_FAILED, "//services/sickbeard");
+        }
 
-        // Notify configuration changes
         $dispatcher = &OMVNotifyDispatcher::getInstance();
         $dispatcher->notify(OMV_NOTIFY_MODIFY, "org.openmediavault.services.sickbeard", $object);
     }
+
 }
 
 // Register the RPC service.

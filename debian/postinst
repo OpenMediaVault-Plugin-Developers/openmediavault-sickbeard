@@ -6,27 +6,36 @@ set -e
 . /usr/share/openmediavault/scripts/helper-functions
 
 case "$1" in
-configure)
-    if ! omv_config_exists "/config/services/sickbeard"; then
-        echo "Initial configuration."
-        object="<enable>0</enable>"
-        object="${object}<showtab>0</showtab>"
-        omv_config_add_element "/config/services" "sickbeard" "${object}" true
-    fi
-
+    configure)
     if ! grep -q "^sickbeard:" /etc/passwd; then
         echo "Adding sickbeard user..."
-        useradd --no-create-home --groups users --no-user-group --shell /usr/sbin/nologin sickbeard
+        useradd --create-home --groups users --no-user-group --shell /usr/sbin/nologin sickbeard
     else
         echo "sickbeard user already exists."
     fi
 
-    chown -R sickbeard:users /opt/sickbeard
+    if [ -e /var/run/sickbeard ]; then
+        echo "Cleaning old pid file..."
+        rm /var/run/sickbeard -Rf
+    fi
 
+    chown sickbeard:users /etc/init.d/sickbeard
+    insserv -d sickbeard
+    #update-rc.d sickbeard defaults
+    #update-rc.d sickbeard disable
+    if ! omv_config_exists "/config/services/sickbeard/sb_repo"; then
+        echo "Initial configuration."
+        object="<enable>0</enable>"
+        object="${object}<showtab>0</showtab>"
+        object="${object}<sb_branch>0</sb_branch>"
+        object="${object}<sb_repo></sb_repo>"
+        omv_config_add_element "/config/services" "sickbeard" "${object}" true
+    fi
+    update-rc.d sickbeard disable > /dev/null >&2
     ;;
-abort-upgrade|abort-remove|abort-deconfigure)
+    abort-upgrade|abort-remove|abort-deconfigure)
     ;;
-*)
+    *)
     echo "postinst called with unknown argument" >&2
     exit 1
     ;;
