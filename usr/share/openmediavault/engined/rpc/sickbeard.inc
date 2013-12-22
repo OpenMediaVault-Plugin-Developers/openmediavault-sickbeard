@@ -56,7 +56,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
     public function setSettings($params, $context) {
         global $xmlConfig;
-        $oldObject = $xmlConfig->get("//services/couchpotato");
+        $oldObject = $xmlConfig->get("//services/sickbeard");
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
         $this->validateMethodParams($params, '{
             "type" : "object",
