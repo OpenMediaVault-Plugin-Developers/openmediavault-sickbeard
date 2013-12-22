@@ -42,99 +42,117 @@ if [ -e $PID_FILE ]; then
     fi
 fi
 
-is_running()
-{
-    if [ ! -e $PID_FILE ]; then
-        return 1
-    fi
-    return 0
+is_running() {
+  if [ ! -e $PID_FILE ]; then
+    return 1
+  fi
+  return 0
 }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> Pass 1 Update
+start() {
+  if ! is_running; then
+    echo "Starting $DESC"
+    #start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
+    /usr/bin/python $DAEMON $DAEMON_OPTS
+    echo "start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS"
+  else
+    echo "$DESC is running"
+  fi
+}
+
+stop() {
+  if is_running; then
+    echo "Stopping $DESC"
+    start-stop-daemon --stop --pidfile $PID_FILE --retry 15
+  fi
+}
+
+restart() {
+  if is_running; then
+    stop
+  fi
+  echo "Restarting $DESC"
+  start
+}
+
+master() {
+  if is_running; then
+    ISRUN=1
+    stop
+  fi
+  cd $APP_PATH
+  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git checkout master
+  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
+  #chmod 775 $APP_PATH -R
+  #git stash
+  #if [ "$ISRUN" == 1 ]; then
+  #  start
+  #fi
+}
+
+develop() {
+  if is_running; then
+    ISRUN=1
+    stop
+  fi
+  cd $APP_PATH
+  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git checkout development
+  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
+  #chmod 775 $APP_PATH -R
+  #git stash
+  #if [ "$ISRUN" == 1 ]; then
+  #  start
+  #fi
+}
+
+swap() {
+  if is_running; then
+    ISRUN=1
+    stop
+  fi
+  if [ -d $APP_PATH ]; then
+    rm -Rf $APP_PATH
+  fi
+  #sudo -u $RUN_AS git clone $1 -b $2 $APP_PATH
+  sudo -u $RUN_AS git clone "$1" -b "$2" $APP_PATH
+  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > "${APP_PATH}/config.ini"
+  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
+  #chmod 775 $APP_PATH -R
+  #cd $APP_PATH
+  #git stash
+  #if [ "$ISRUN" == 1 ]; then
+  #  start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
+  #fi
+}
+
 case "$1" in
-    start)
-        echo "Starting $DESC"
-        start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-        echo "start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS"
-        ;;
-    stop)
-        if is_running; then
-            echo "Stopping $DESC"
-            start-stop-daemon --stop --pidfile $PID_FILE --retry 15
-        fi
-        ;;
-
-    restart|force-reload)
-        if is_running; then
-            start-stop-daemon --stop --pidfile $PID_FILE --retry 15
-        fi
-        echo "Restarting $DESC"
-<<<<<<< HEAD
-        start-stop-daemon -d $APP_PATH -c $RUN_AS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS
-=======
-        start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
->>>>>>> Pass 1 Update
-        ;;
-
-    master)
-        if is_running; then
-            ISRUN=1
-            start-stop-daemon --stop --pidfile $PID_FILE --retry 15
-        fi
-        cd $APP_PATH
-        git stash
-        git checkout master
-        chown $RUN_AS:$RUN_GRP $APP_PATH -R
-        chmod 775 $APP_PATH -R
-        #git stash
-        if [ "$ISRUN" == 1 ]; then
-            start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-        fi
-        ;;
-    develop)
-        if is_running; then
-            ISRUN=1
-            start-stop-daemon --stop --pidfile $PID_FILE --retry 15
-        fi
-        cd $APP_PATH
-        git stash
-        git checkout development
-        chown $RUN_AS:$RUN_GRP $APP_PATH -R
-        chmod 775 $APP_PATH -R
-        #git stash
-        if [ "$ISRUN" == 1 ]; then
-            start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-        fi
-        ;;
-    swap)
-        if is_running; then
-            ISRUN=1
-            start-stop-daemon --stop --pidfile $PID_FILE --retry 15
-        fi
-        if [ -d $APP_PATH ]; then
-            rm -Rf $APP_PATH
-        fi
-        git clone "$2" -b "$3" $APP_PATH
-        echo 'git_path = "/usr/bin/git"' > /opt/sickbeard/config.ini
-        chown $RUN_AS:$RUN_GRP $APP_PATH -R
-        chmod 775 $APP_PATH -R
-        #cd $APP_PATH
-        #git stash
-        if [ "$ISRUN" == 1 ]; then
-            start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-        fi
-        ;;
-    status)
-        status_of_proc -p $PID_FILE "$DAEMON" "$NAME"
-        ;;
-    *)
-        N=/etc/init.d/$NAME
-        echo "Usage: $N {start|stop|restart|force-reload}" >&2
-        exit 1
-        ;;
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  swap)
+    swap $2 $3
+    ;;
+  master)
+    master
+    ;;
+  develop)
+    develop
+    ;;
+  retart)
+    stop
+    start
+    ;;
+  status)
+    status_of_proc -p $PID_FILE "$DAEMON" "$NAME"
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|uninstall}"
 esac
 
 exit 0

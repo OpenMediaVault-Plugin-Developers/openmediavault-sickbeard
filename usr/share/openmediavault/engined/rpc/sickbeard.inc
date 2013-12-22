@@ -76,7 +76,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
                 $params['sb_branch'] = 0;
             }
             elseif($params['sb_repo'] == 1) {
-                $this->exec("/etc/init.d/sickbeard swap https://github.com/xbianonpi/Sick-Beard-TPB.git");
+                $this->exec("/etc/init.d/sickbeard swap https://github.com/xbianonpi/Sick-Beard-TPB.git ThePirateBay");
                 $params['sb_branch'] = 0;
             }
         }

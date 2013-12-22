@@ -19,10 +19,10 @@ case "$1" in
         rm /var/run/sickbeard -Rf
     fi
 
+    chmod 775 /opt
+    chown sickbeard:users /opt
     chown sickbeard:users /etc/init.d/sickbeard
     insserv -d sickbeard
-    #update-rc.d sickbeard defaults
-    #update-rc.d sickbeard disable
     if ! omv_config_exists "/config/services/sickbeard/sb_repo"; then
         echo "Initial configuration."
         object="<enable>0</enable>"
@@ -31,7 +31,7 @@ case "$1" in
         object="${object}<sb_repo></sb_repo>"
         omv_config_add_element "/config/services" "sickbeard" "${object}" true
     fi
-    update-rc.d sickbeard disable > /dev/null >&2
+    update-rc.d sickbeard disable
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;
