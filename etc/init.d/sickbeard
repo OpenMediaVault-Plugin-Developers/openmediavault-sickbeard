@@ -18,12 +18,12 @@ set -e
 RUN_AS=sickbeard
 RUN_GRP=users
 APP_PATH=/opt/sickbeard
-DAEMON=$APP_PATH/SickBeard.py
+DAEMON=/usr/bin/python
 PID_FILE=/var/run/sickbeard/sickbeard.pid
 PID_PATH=$(dirname $PID_FILE)
 NAME=sickbeard
 DESC=sickbeard
-DAEMON_OPTS=" --daemon --pidfile=${PID_FILE}"
+DAEMON_OPTS=" $APP_PATH/SickBeard.py --daemon --pidfile=${PID_FILE}"
 ############### END EDIT ME ##################
 ISRUN=0
 
@@ -54,9 +54,7 @@ is_running() {
 start() {
   if ! is_running; then
     echo "Starting $DESC"
-    #start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-    /usr/bin/python $DAEMON $DAEMON_OPTS
-    echo "start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS"
+    sudo -u $RUN_AS $DAEMON $DAEMON_OPTS
   else
     echo "$DESC is running"
   fi

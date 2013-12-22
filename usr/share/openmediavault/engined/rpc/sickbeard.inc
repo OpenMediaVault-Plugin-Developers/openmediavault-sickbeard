@@ -46,15 +46,17 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         $object['enable']  = boolval($object['enable']);
         $object['showtab'] = boolval($object['showtab']);
         $object['sb_branch'] = intval($object['sb_branch']);
-        if($object['sb_repo'] != 0 || $object['sb_repo'] != 1) {
+        if($object['sb_repo'] != "") {
           $object['sb_repo'] = intval($object['sb_repo']);
+          return $object;
         }
+        $object['sb_repo'] = '';
         return $object;
     }
 
     public function setSettings($params, $context) {
         global $xmlConfig;
-        $oldObject = $xmlConfig->get("//services/sickbeard");
+        $oldObject = $xmlConfig->get("//services/couchpotato");
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
         $this->validateMethodParams($params, '{
             "type" : "object",
@@ -65,6 +67,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
                 "sb_repo"       : { "type" : "integer","enum":[0,1]}
             }
         }');
+
+        if($oldObject['sb_repo'] == "") {
+            $oldObject['sb_repo'] = 3;
+        }
 
         if($params['sb_repo'] == 1 && $params['sb_branch'] == 1)
             throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");
@@ -80,12 +86,11 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
                 $params['sb_branch'] = 0;
             }
         }
-        // throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, $params['sb_repo'] . "-" . $oldObject['sb_repo']);
+
         if($params['sb_repo'] == $oldObject['sb_repo']) {
             if($params['sb_repo'] == 0) {
                 if($params['sb_branch'] != $oldObject['sb_branch']) {
-                    if($params['sb_branch'] == 0)
-                    {
+                    if($params['sb_branch'] == 0) {
                         $this->exec("/etc/init.d/sickbeard master");
                     }
                     if($params['sb_branch'] == 1) {
