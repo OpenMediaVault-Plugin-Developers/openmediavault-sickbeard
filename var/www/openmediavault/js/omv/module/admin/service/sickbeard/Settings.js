@@ -100,7 +100,6 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                     text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
                 }]
             },{
-
                 xtype      : "combo",
                 name       : "sb_branch",
                 fieldLabel : _("Branch"),

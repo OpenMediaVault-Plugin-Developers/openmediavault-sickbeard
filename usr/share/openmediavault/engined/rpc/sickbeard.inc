@@ -39,14 +39,15 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         global $xmlConfig;
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
         $object = $xmlConfig->get("//services/sickbeard");
-        if(is_null($object))
+        if(is_null($object)) {
             throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, "//services/sickbeard");
+        }
 
         $object['enable']  = boolval($object['enable']);
         $object['showtab'] = boolval($object['showtab']);
         $object['sb_branch'] = intval($object['sb_branch']);
-        if($object['sb_repo'] != '') {
-            $object['sb_repo'] = intval($object['sb_repo']);
+        if($object['sb_repo'] != 0 || $object['sb_repo'] != 1) {
+          $object['sb_repo'] = intval($object['sb_repo']);
         }
         return $object;
     }
@@ -64,7 +65,6 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
                 "sb_repo"       : { "type" : "integer","enum":[0,1]}
             }
         }');
-
 
         if($params['sb_repo'] == 1 && $params['sb_branch'] == 1)
             throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");

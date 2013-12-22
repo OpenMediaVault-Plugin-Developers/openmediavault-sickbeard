@@ -32,17 +32,15 @@ class OMVModulesickbeard extends OMVModuleServiceAbstract
 
     public function getStatus() {
         global $xmlConfig;
-<<<<<<< HEAD
-        $xpath  = "//services/sickbeard";
-=======
-        $xpath = "//services/sickbeard";
->>>>>>> Pass 1 Update
-        $object = $xmlConfig->get($xpath);
-        if (is_null($object))
-                        throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+		$xpath = "//services/sickbeard";
+		$object = $xmlConfig->get($xpath);
+        if(is_null($object)) {
+          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+        }
 
-	$cmd = "/etc/init.d/sickbeard status";
+        $cmd = "/etc/init.d/sickbeard status";
         $this->exec($cmd, $output);
+		
         return array(
             "name"    => $this->getName(),
             "title"   => gettext("sickbeard"),
@@ -55,52 +53,40 @@ class OMVModulesickbeard extends OMVModuleServiceAbstract
         global $xmlConfig;
         $xpath  = "//services/sickbeard";
         $object = $xmlConfig->get($xpath);
-        if (is_null($object))
-<<<<<<< HEAD
-                        throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
-=======
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
->>>>>>> Pass 1 Update
+        if(is_null($object)) {
+          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+        }
 
-        if(FALSE === boolval($object['enable']))
-            return;
+        if(FALSE === boolval($object['enable'])) {
+          return;
+        }
 
-<<<<<<< HEAD
-                $initd = new OMVSysVInitScript("sickbeard", TRUE);
-                $initd->exec();
-=======
         $cmd = "/etc/init.d/sickbeard status";
         $this->exec($cmd, $output);
-        if (strpos($output[0], 'failed!') > 0);
-            $cmd = "/etc/init.d/sickbeard start && update-rc.d sickbeard enable 2>&1";
-            $this->exec($cmd);
->>>>>>> Pass 1 Update
+        if(strpos($output[0], 'failed!') > 0) {
+          $cmd = "/etc/init.d/sickbeard start && update-rc.d sickbeard enable 2>&1";
+          $this->exec($cmd);
+		}
     }
 
     public function stopService() {
         global $xmlConfig;
         $xpath  = "//services/sickbeard";
         $object = $xmlConfig->get($xpath);
-        if (is_null($object))
-<<<<<<< HEAD
-                        throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
-=======
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
->>>>>>> Pass 1 Update
+        if(is_null($object)) {
+          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+        }
 
-        if(TRUE === boolval($object['enable']))
+        if(TRUE === boolval($object['enable'])) {
             return;
+        }
 
-<<<<<<< HEAD
-                $initd = new OMVSysVInitScript("sickbeard", FALSE);
-                $initd->exec();
-=======
         $cmd = "/etc/init.d/sickbeard status";
         $this->exec($cmd, $output);
-        if (strpos($output[0], 'is running') > -1);
-            $cmd = "/etc/init.d/sickbeard stop && update-rc.d sickbeard disable 2>&1";
-            $this->exec($cmd, $output);
->>>>>>> Pass 1 Update
+        if(strpos($output[0], 'is running') > -1) {
+          $cmd = "/etc/init.d/sickbeard stop && update-rc.d sickbeard disable 2>&1";
+          $this->exec($cmd, $output);
+        }
     }
 
     public function bindListeners(OMVNotifyDispatcher $dispatcher) {

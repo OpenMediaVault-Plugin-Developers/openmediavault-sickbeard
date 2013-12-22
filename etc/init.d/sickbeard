@@ -12,9 +12,11 @@
 # Description:       starts instance of CouchPotato using start-stop-daemon
 ### END INIT INFO
 
+set -e
+
 ############### BEGIN EDIT ME ################
-RUN_GRP=users
 RUN_AS=sickbeard
+RUN_GRP=users
 APP_PATH=/opt/sickbeard
 DAEMON=$APP_PATH/SickBeard.py
 PID_FILE=/var/run/sickbeard/sickbeard.pid
@@ -22,8 +24,8 @@ PID_PATH=$(dirname $PID_FILE)
 NAME=sickbeard
 DESC=sickbeard
 DAEMON_OPTS=" --daemon --pidfile=${PID_FILE}"
-ISRUN=0
 ############### END EDIT ME ##################
+ISRUN=0
 
 # Get lsb functions
 . /lib/lsb/init-functions
@@ -48,7 +50,6 @@ is_running() {
   fi
   return 0
 }
-
 
 start() {
   if ! is_running; then
@@ -118,7 +119,7 @@ swap() {
   fi
   #sudo -u $RUN_AS git clone $1 -b $2 $APP_PATH
   sudo -u $RUN_AS git clone "$1" -b "$2" $APP_PATH
-  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > "${APP_PATH}/config.ini"
+  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > $APP_PATH/config.ini
   #chown $RUN_AS:$RUN_GRP $APP_PATH -R
   #chmod 775 $APP_PATH -R
   #cd $APP_PATH
@@ -154,5 +155,3 @@ case "$1" in
   *)
     echo "Usage: $0 {start|stop|restart|uninstall}"
 esac
-
-exit 0

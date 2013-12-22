@@ -20,10 +20,10 @@ case "$1" in
     fi
 
     chmod 775 /opt
-    chown sickbeard:users /opt
+    chown root:users /opt
     chown sickbeard:users /etc/init.d/sickbeard
     insserv -d sickbeard
-    if ! omv_config_exists "/config/services/sickbeard/sb_repo"; then
+    if ! omv_config_exists "/config/services/sickbeard"; then
         echo "Initial configuration."
         object="<enable>0</enable>"
         object="${object}<showtab>0</showtab>"

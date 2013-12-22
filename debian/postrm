@@ -26,7 +26,7 @@ case "$1" in
                 userdel -r sickbeard
                 if [ ! -d /opt ]; then
                     mkdir /opt
-                    chmod 775 /opt -R
+                    chmod 775 /opt
                 fi
         ;;
 
