@@ -33,6 +33,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
     public function initialize() {
         $this->registerMethod('getSettings');
         $this->registerMethod('setSettings');
+    }
+    
     function getSettings($params, $context) {
         global $xmlConfig;
         $this->validateMethodContext($context, array(
