@@ -33,73 +33,58 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
     public function initialize() {
         $this->registerMethod('getSettings');
         $this->registerMethod('setSettings');
-    }
-
-    public function getSettings($params, $context) {
+    function getSettings($params, $context) {
         global $xmlConfig;
-        $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR ));
         $object = $xmlConfig->get("//services/sickbeard");
-        if(is_null($object)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, "//services/sickbeard");
-        }
 
-        $object['enable']  = boolval($object['enable']);
+        if(is_null($object))
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, "//services/sickbeard");
+
+        $object['enable'] = boolval($object['enable']);
         $object['showtab'] = boolval($object['showtab']);
         $object['sb_branch'] = intval($object['sb_branch']);
-        if($object['sb_repo'] != "") {
-          $object['sb_repo'] = intval($object['sb_repo']);
-          return $object;
-        }
-        $object['sb_repo'] = '';
         return $object;
-    }
+   }
 
-    public function setSettings($params, $context) {
+    function setSettings($params, $context) {
         global $xmlConfig;
-        $oldObject = $xmlConfig->get("//services/sickbeard");
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
         $this->validateMethodParams($params, '{
             "type" : "object",
             "properties" : {
-                "enable"        : { "type" : "boolean" },
-                "showtab"       : { "type" : "boolean" },
-                "sb_branch"     : { "type" : "integer","enum":[0,1]},
-                "sb_repo"       : { "type" : "integer","enum":[0,1]}
+                "enable"        : { "type" : "boolean"},
+                "showtab"       : { "type" : "boolean"},
+                "sb_repo"       : { "type" : "string"},
+                "sb_branch"     : { "type" : "integer","enum":[0,1]}
             }
         }');
 
-        if($oldObject['sb_repo'] == "") {
-            $oldObject['sb_repo'] = 3;
-        }
+        $xpath = "//services/sickbeard";
+        $oldObject = $xmlConfig->get($xpath);
 
-        if($params['sb_repo'] == 1 && $params['sb_branch'] == 1)
+        if (is_null($oldObject))
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+
+        if($params['sb_repo'] != 'a' && $params['sb_branch'] == 1)
             throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");
 
         if($params['sb_repo'] != $oldObject['sb_repo']) {
-            //throw new OMVException(OMVErrorMsg::E_CONFIG_SET_OBJECT_FAILED, $params['sb_repo'] . "-" . $oldObject['sb_repo']);
-            if($params['sb_repo'] == 0) {
-                $this->exec("/etc/init.d/sickbeard swap https://github.com/midgetspy/Sick-Beard.git master");
-                $params['sb_branch'] = 0;
-            }
-            elseif($params['sb_repo'] == 1) {
-                $this->exec("/etc/init.d/sickbeard swap https://github.com/xbianonpi/Sick-Beard-TPB.git ThePirateBay");
-                $params['sb_branch'] = 0;
-            }
-        }
-
-        if($params['sb_repo'] == $oldObject['sb_repo']) {
-            if($params['sb_repo'] == 0) {
-                if($params['sb_branch'] != $oldObject['sb_branch']) {
-                    if($params['sb_branch'] == 0) {
-                        $this->exec("/etc/init.d/sickbeard master");
-                    }
-                    if($params['sb_branch'] == 1) {
-                        $this->exec("/etc/init.d/sickbeard develop");
-                    }
+            $params['sb_branch'] = 0;
+            $cmd = "omv-mkconf sickbeard swap_" . $params['sb_repo'] . " 2>&1";
+        } else {
+            if($params['sb_branch'] != $oldObject['sb_branch']) {
+                if($params['sb_branch'] == 0) {
+                    $cmd = "omv-mkconf sickbeard master 2>&1";
+                }
+                if($params['sb_branch'] == 1) {
+                    $cmd = "omv-mkconf sickbeard develop 2>&1";
                 }
             }
         }
 
+        $this->exec($cmd);
         $object = array(
             "enable"            => array_boolval($params, 'enable'),
             "showtab"           => array_boolval($params, 'showtab'),
