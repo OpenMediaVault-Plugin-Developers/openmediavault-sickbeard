@@ -77,24 +77,17 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
             },{
                 xtype      : "combo",
                 name       : "sb_repo",
-                fieldLabel : _("Repository"),
-                queryMode  : "local",
-                store      : Ext.create("Ext.data.ArrayStore", {
-                    fields : [
-                        "value",
-                        "text"
+                fieldLabel : "Repository",
+                allowBlank : false,
+                editable   : false,
+                store   : [
+                        [ 'a', _("Sickbeard - Main - midgetspy/Sick-Beard") ],
+                        [ 'b', _("Sickbeard - Torrents - xbianonpi/Sick-Beard-TPB") ],
+                        [ 'c', _("Sickbeard - Torrents - bricky/Sick-Beard") ]
                     ],
-                    data   : [
-                        [ 0, _("Sickbeard - Main") ],
-                        [ 1, _("Sickbeard - Torrents") ]
-                    ]
-                }),
-                displayField  : "text",
-                valueField    : "value",
-                allowBlank    : false,
-                editable      : false,
-                triggerAction : "all",
-                value         : 0,
+                mode            : 'local',
+                triggerAction   : 'all',
+                selectOnFocus   : true,
                 plugins       : [{
                     ptype : "fieldinfo",
                     text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
