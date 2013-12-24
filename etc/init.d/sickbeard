@@ -23,7 +23,7 @@ PID_FILE=/var/run/sickbeard/sickbeard.pid
 PID_PATH=$(dirname $PID_FILE)
 NAME=sickbeard
 DESC=sickbeard
-DAEMON_OPTS=" $APP_PATH/SickBeard.py --daemon --pidfile=${PID_FILE}"
+DAEMON_OPTS=" ${APP_PATH}/SickBeard.py --daemon --nolaunch --pidfile=${PID_FILE} --datadir=${APP_PATH}"
 ############### END EDIT ME ##################
 ISRUN=0
 
@@ -75,73 +75,12 @@ restart() {
   start
 }
 
-master() {
-  if is_running; then
-    ISRUN=1
-    stop
-  fi
-  cd $APP_PATH
-  sudo -u $RUN_AS git stash
-  sudo -u $RUN_AS git checkout master
-  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
-  #chmod 775 $APP_PATH -R
-  #git stash
-  #if [ "$ISRUN" == 1 ]; then
-  #  start
-  #fi
-}
-
-develop() {
-  if is_running; then
-    ISRUN=1
-    stop
-  fi
-  cd $APP_PATH
-  sudo -u $RUN_AS git stash
-  sudo -u $RUN_AS git checkout development
-  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
-  #chmod 775 $APP_PATH -R
-  #git stash
-  #if [ "$ISRUN" == 1 ]; then
-  #  start
-  #fi
-}
-
-swap() {
-  if is_running; then
-    ISRUN=1
-    stop
-  fi
-  if [ -d $APP_PATH ]; then
-    rm -Rf $APP_PATH
-  fi
-  #sudo -u $RUN_AS git clone $1 -b $2 $APP_PATH
-  sudo -u $RUN_AS git clone "$1" -b "$2" $APP_PATH
-  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > $APP_PATH/config.ini
-  #chown $RUN_AS:$RUN_GRP $APP_PATH -R
-  #chmod 775 $APP_PATH -R
-  #cd $APP_PATH
-  #git stash
-  #if [ "$ISRUN" == 1 ]; then
-  #  start-stop-daemon -c $RUN_AS --start --exec $DAEMON -- $DAEMON_OPTS
-  #fi
-}
-
 case "$1" in
   start)
     start
     ;;
   stop)
     stop
-    ;;
-  swap)
-    swap $2 $3
-    ;;
-  master)
-    master
-    ;;
-  develop)
-    develop
     ;;
   retart)
     stop
