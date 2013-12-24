@@ -1,0 +1,66 @@
+#! /bin/sh
+
+APP_PATH=/opt/sickbeard
+RUN_AS=sickbeard
+
+/etc/init.d/sickbeard stop
+
+master() {
+  cd $APP_PATH
+  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git checkout master
+}
+
+develop() {
+  cd $APP_PATH
+  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git checkout develop
+}
+
+swap_a() {
+  if [ -d $APP_PATH ]; then
+    rm -Rf $APP_PATH/.git
+    rm -Rf $APP_PATH
+  fi
+  sudo -u $RUN_AS git clone "https://github.com/midgetspy/Sick-Beard.git" -b "master" $APP_PATH
+  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > $APP_PATH/config.ini
+}
+
+swap_b() {
+  if [ -d $APP_PATH ]; then
+    rm -Rf $APP_PATH/.git
+    rm -Rf $APP_PATH
+  fi
+  sudo -u $RUN_AS git clone "https://github.com/xbianonpi/Sick-Beard-TPB.git" $APP_PATH
+  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > $APP_PATH/config.ini
+}
+
+swap_c() {
+  if [ -d $APP_PATH ]; then
+    rm -Rf $APP_PATH/.git
+    rm -Rf $APP_PATH
+  fi
+  sudo -u $RUN_AS git clone "https://github.com/bricky/Sick-Beard.git" $APP_PATH
+  sudo -u $RUN_AS echo 'git_path = "/usr/bin/git"' > $APP_PATH/config.ini
+}
+
+
+case "$2" in
+  swap_a)
+    swap_a
+    ;;
+  swap_b)
+    swap_b
+    ;;
+  swap_c)
+    swap_c
+    ;;
+  master)
+    master
+    ;;
+  develop)
+    develop
+    ;;
+  *)
+    exit 1
+esac
