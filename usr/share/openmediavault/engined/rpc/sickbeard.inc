@@ -34,7 +34,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         $this->registerMethod('getSettings');
         $this->registerMethod('setSettings');
     }
-    
+
     function getSettings($params, $context) {
         global $xmlConfig;
         $this->validateMethodContext($context, array(
@@ -74,15 +74,13 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
         if($params['sb_repo'] != $oldObject['sb_repo']) {
             $params['sb_branch'] = 0;
-            $cmd = "omv-mkconf sickbeard swap_" . $params['sb_repo'] . " 2>&1";
-        } else {
-            if($params['sb_branch'] != $oldObject['sb_branch']) {
-                if($params['sb_branch'] == 0) {
-                    $cmd = "omv-mkconf sickbeard master 2>&1";
-                }
-                if($params['sb_branch'] == 1) {
-                    $cmd = "omv-mkconf sickbeard develop 2>&1";
-                }
+            $cmd = "omv-mkconf sickbeard swap_" . $params['sb_repo'];
+        } elseif($params['sb_branch'] != $oldObject['sb_branch']) {
+            if($params['sb_branch'] == 0) {
+                $cmd = "omv-mkconf sickbeard master 2>&1";
+            }
+            if($params['sb_branch'] == 1) {
+                $cmd = "omv-mkconf sickbeard develop 2>&1";
             }
         }
 
@@ -99,7 +97,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         }
 
         $dispatcher = &OMVNotifyDispatcher::getInstance();
-        $dispatcher->notify(OMV_NOTIFY_MODIFY, "org.openmediavault.services.sickbeard", $object);
+        $dispatcher->notify(OMV_NOTIFY_MODIFY,
+          "org.openmediavault.services.sickbeard", $object);
+        return $object;
     }
 
 }
