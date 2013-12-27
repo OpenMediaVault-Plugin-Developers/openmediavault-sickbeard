@@ -14,7 +14,7 @@ master() {
 develop() {
   cd $APP_PATH
   sudo -u $RUN_AS git stash
-  sudo -u $RUN_AS git checkout develop
+  sudo -u $RUN_AS git checkout development
 }
 
 swap_a() {
