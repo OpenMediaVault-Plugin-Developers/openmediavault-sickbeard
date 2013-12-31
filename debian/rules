@@ -13,7 +13,6 @@ install:
 	dh_prep
 	dh_installdirs
 	dh_install
-    chmod +x $(CURDIR)/debian/openmediavault-sickbeard/usr/share/openmediavault/mkconf/sickbeard
 
 binary-indep: install omv_clean_scm
 	dh_testdir
