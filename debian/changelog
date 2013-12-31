@@ -1,3 +1,9 @@
+openmediavault-sickbeard (0.5.7) stable; urgency=low
+
+  * Add backup message
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 31 Dec 2013 14:20:27 -0500
+
 openmediavault-sickbeard (0.5.6) stable; urgency=low
 
   * Add repo changer

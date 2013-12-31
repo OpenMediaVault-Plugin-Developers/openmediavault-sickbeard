@@ -16,3 +16,6 @@ Description: OpenMediaVault Sick Beard plugin
  generates metadata for them. It currently supports NZBs.org, NZBMatrix,
  NZBs'R'Us, Newzbin, Womble's Index, NZB.su, TVTorrents and EZRSS and
  retrieves show information from theTVDB.com and TVRage.com.
+ .
+ Backup your database before installing!!
+
