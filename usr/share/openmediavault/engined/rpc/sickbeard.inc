@@ -72,6 +72,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         if($params['sb_repo'] != 'a' && $params['sb_branch'] == 1)
             throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");
 
+        if($params['sb_repo'] != 'a' && $params['sb_branch'] == 2)
+            throw new OMVException(OMVErrorMsg::E_MISC_FAILURE, "You CAN NOT use this branch with this repository.");
+
         if($params['sb_repo'] != $oldObject['sb_repo']) {
             $params['sb_branch'] = 0;
             $cmd = "omv-mkconf sickbeard swap_" . $params['sb_repo'];
@@ -81,6 +84,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
             }
             if($params['sb_branch'] == 1) {
                 $cmd = "omv-mkconf sickbeard develop 2>&1";
+            }
+            if($params['sb_branch'] == 2) {
+                $cmd = "omv-mkconf sickbeard anime 2>&1";
             }
         }
 
