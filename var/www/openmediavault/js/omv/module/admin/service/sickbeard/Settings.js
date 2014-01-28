@@ -104,7 +104,8 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                     ],
                     data   : [
                         [ 0, _("Master") ],
-                        [ 1, _("Develop") ]
+                        [ 1, _("Develop") ],
+                        [ 2, _("Anime") ]
                     ]
                 }),
                 displayField  : "text",
