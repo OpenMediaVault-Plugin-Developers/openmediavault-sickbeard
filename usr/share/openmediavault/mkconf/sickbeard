@@ -7,14 +7,20 @@ DATA_DIR=/home/sickbeard/.sickbeard
 
 master() {
   cd $APP_PATH
-  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git reset --hard
   sudo -u $RUN_AS git checkout master
 }
 
 develop() {
   cd $APP_PATH
-  sudo -u $RUN_AS git stash
+  sudo -u $RUN_AS git reset --hard
   sudo -u $RUN_AS git checkout development
+}
+
+anime() {
+  cd $APP_PATH
+  sudo -u $RUN_AS git reset --hard
+  sudo -u $RUN_AS git checkout anime
 }
 
 swap_a() {
