@@ -83,7 +83,8 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 store   : [
                         [ 'a', _("Sickbeard - Main - midgetspy/Sick-Beard") ],
                         [ 'b', _("Sickbeard - Torrents - xbianonpi/Sick-Beard-TPB") ],
-                        [ 'c', _("Sickbeard - Torrents - bricky/Sick-Beard") ]
+                        [ 'c', _("Sickbeard - Torrents - bricky/Sick-Beard") ],
+                        [ 'd', _("Sickbeard - SickRage - echel0n/SickRage") ]
                     ],
                 mode            : 'local',
                 triggerAction   : 'all',

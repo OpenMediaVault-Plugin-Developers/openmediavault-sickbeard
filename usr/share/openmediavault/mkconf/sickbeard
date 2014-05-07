@@ -53,6 +53,16 @@ swap_c() {
   sudo -u $RUN_AS git clone "https://github.com/bricky/Sick-Beard.git"  -b "master" $APP_PATH
 }
 
+swap_d() {
+  if [ -d $APP_PATH ]; then
+    rm -Rf $APP_PATH
+  fi
+  if [ -d $DATA_DIR ]; then
+    rm -Rf $DATA_DIR
+  fi
+  sudo -u $RUN_AS git clone "https://github.com/echel0n/SickRage"  -b "master" $APP_PATH
+}
+
 case "$2" in
   swap_a)
     swap_a
@@ -62,6 +72,9 @@ case "$2" in
     ;;
   swap_c)
     swap_c
+    ;;
+  swap_d)
+    swap_d
     ;;
   master)
     master
