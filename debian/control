@@ -2,13 +2,12 @@ Source: openmediavault-sickbeard
 Section: misc
 Priority: optional
 Maintainer: OpenMediaVault Plugin Developers <plugins@omv-extras.org>
-Build-Depends: debhelper (>= 7 )
+Build-Depends: debhelper (>= 9 )
 Standards-Version: 3.9.3
 
 Package: openmediavault-sickbeard
 Architecture: all
-Depends: ${misc:Depends}, openmediavault (>= 0.5), openmediavault (<< 0.6),
-  python, python-cheetah, git
+Depends: ${misc:Depends}, openmediavault (>= 0.6), python, python-cheetah, git
 Description: OpenMediaVault Sick Beard plugin
  Sick Beard is a PVR for newsgroup users (with limited torrent support).
  It watches for new episodes of your favorite shows and when they are

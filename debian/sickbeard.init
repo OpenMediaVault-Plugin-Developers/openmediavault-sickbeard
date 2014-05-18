@@ -8,8 +8,8 @@
 # Should-Stop:       $NetworkManager
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: starts instance of CouchPotato
-# Description:       starts instance of CouchPotato using start-stop-daemon
+# Short-Description: starts instance of Sickbeard
+# Description:       starts instance of Sickbeard using start-stop-daemon
 ### END INIT INFO
 
 set -e
@@ -56,6 +56,8 @@ if [ ! -f $DATA_DIR/config.ini ]; then
 launch_browser = 0
 git_path = "/usr/bin/git"' > $DATA_DIR/config.ini
     chown $RUN_AS $PID_PATH
+    chown $RUN_AS $DATA_DIR/config.ini
+    chmod 775 $DATA_DIR/config.ini
 fi
 
 is_running() {
@@ -68,7 +70,7 @@ is_running() {
 start() {
   if ! is_running; then
     echo "Starting $DESC"
-    sudo -u $RUN_AS $DAEMON $DAEMON_OPTS > dev/null
+    sudo -u $RUN_AS $DAEMON $DAEMON_OPTS &> /dev/null 2>&1
   else
     echo "$DESC is running"
   fi

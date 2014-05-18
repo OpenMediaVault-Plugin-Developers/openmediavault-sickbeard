@@ -1,87 +1,60 @@
-#! /bin/sh
+#!/bin/sh
 
-APP_PATH=/opt/sickbeard
-RUN_AS=sickbeard
-DATA_DIR=/home/sickbeard/.sickbeard
-/etc/init.d/sickbeard stop
+set -e
 
-master() {
-  cd $APP_PATH
-  sudo -u $RUN_AS git reset --hard
-  sudo -u $RUN_AS git checkout master
+. /etc/default/openmediavault
+. /usr/share/openmediavault/scripts/helper-functions
+
+APP_PATH="/opt/sickbeard"
+repo="$(omv_config_get "//services/sickbeard/sb_repo")"
+branch="$(omv_config_get "//services/sickbeard/sb_branch")"
+RUN_AS="sickbeard"
+DATA_DIR="/home/sickbeard/.sickbeard"
+CONFIG="/home/sickbeard/.sickbeard/config.ini"
+
+switch_repo() {
+    if [ -d $APP_PATH ]; then
+        rm -Rf $APP_PATH
+    fi
+
+    if [ -d $DATA_DIR ]; then
+        rm -Rf $DATA_DIR
+    fi
+
+    cd /
+    sudo -u $RUN_AS git clone "${repo}" -b "${branch}" "${APP_PATH}"
 }
 
-develop() {
-  cd $APP_PATH
-  sudo -u $RUN_AS git reset --hard
-  sudo -u $RUN_AS git checkout development
+switch_branch() {
+    cd $APP_PATH
+    sudo -u $RUN_AS git reset --hard
+    sudo -u $RUN_AS git checkout "${branch}"
 }
 
-anime() {
-  cd $APP_PATH
-  sudo -u $RUN_AS git reset --hard
-  sudo -u $RUN_AS git checkout anime
-}
+# If /opt/sickbeard does not exists
+# must be first clone
+if [ ! -d $APP_PATH ]; then
+    switch_repo
+    exit 0
+fi
 
-swap_a() {
-  if [ -d $APP_PATH ]; then
-    rm -Rf $APP_PATH
-  fi
-  if [ -d $DATA_DIR ]; then
-    rm -Rf $DATA_DIR
-  fi
-  sudo -u $RUN_AS git clone "https://github.com/midgetspy/Sick-Beard.git" -b "master" $APP_PATH
-}
+# If /opt/sickbeard exists and is not empty
+# fetch current repo and branch
+if [ -n "$(ls -A $APP_PATH)" ]; then
+    cd $APP_PATH
+    current_repo="$(git config --get remote.origin.url)"
+    current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
-swap_b() {
-  if [ -d $APP_PATH ]; then
-    rm -Rf $APP_PATH
-  fi
-  if [ -d $DATA_DIR ]; then
-    rm -Rf $DATA_DIR
-  fi
-  sudo -u $RUN_AS git clone "https://github.com/xbianonpi/Sick-Beard-TPB.git" -b "ThePirateBay" $APP_PATH
-}
+    if [ $repo != $current_repo ]; then
+        switch_repo
+        exit 0
+    fi
 
-swap_c() {
-  if [ -d $APP_PATH ]; then
-    rm -Rf $APP_PATH
-  fi
-  if [ -d $DATA_DIR ]; then
-    rm -Rf $DATA_DIR
-  fi
-  sudo -u $RUN_AS git clone "https://github.com/bricky/Sick-Beard.git"  -b "master" $APP_PATH
-}
-
-swap_d() {
-  if [ -d $APP_PATH ]; then
-    rm -Rf $APP_PATH
-  fi
-  if [ -d $DATA_DIR ]; then
-    rm -Rf $DATA_DIR
-  fi
-  sudo -u $RUN_AS git clone "https://github.com/echel0n/SickRage"  -b "master" $APP_PATH
-}
-
-case "$2" in
-  swap_a)
-    swap_a
-    ;;
-  swap_b)
-    swap_b
-    ;;
-  swap_c)
-    swap_c
-    ;;
-  swap_d)
-    swap_d
-    ;;
-  master)
-    master
-    ;;
-  develop)
-    develop
-    ;;
-  *)
-    exit 1
-esac
+    if [ $branch != $current_branch ]; then
+        switch_branch
+        exit 0
+    fi
+else
+   rm -rf $APP_PATH
+   switch_repo
+fi

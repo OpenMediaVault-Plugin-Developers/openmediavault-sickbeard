@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C)      2013 OpenMediaVault Plugin Developers
+ * Copyright (C) 2013-2014 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,80 +23,95 @@ require_once "openmediavault/error.inc";
 require_once "openmediavault/util.inc";
 require_once "openmediavault/initscript.inc";
 
-class OMVModulesickbeard extends OMVModuleServiceAbstract
+class OMVModuleSickbeard extends OMVModuleServiceAbstract
     implements OMVINotifyListener, OMVIModuleServiceStatus {
 
     public function getName() {
-        return "sickbeard";
+        return "Sickbeard";
+    }
+
+    private function getPluginName() {
+        return strtolower( $this->getName());
+    }
+
+    private function getEventMessagePath() {
+        $path = sprintf( "org.openmediavault.service.%s", $this->getPluginName());
+        return $path;
+    }
+
+
+    private function getEventMessagePathFork() {
+        $path = sprintf( "%s.forks.fork", $this->getEventMessagePath());
+        return $path;
+    }
+
+    private function getXPath() {
+        $path = sprintf("//services/%s", $this->getPluginName());
+        return $path;
+    }
+
+    public function applyConfig() {
+        $cmd = sprintf("omv-mkconf %s 2>&1", $this->getPluginName());
+        //$cmd = "sudo omv-mkconf " . $this->getName() . " 2>&1";
+
+        if (0 !== $this->exec($cmd, $output))
+            throw new OMVException(OMVErrorMsg::E_EXEC_FAILED, $cmd, implode("\n", $output));
     }
 
     public function getStatus() {
         global $xmlConfig;
-		$xpath = "//services/sickbeard";
-		$object = $xmlConfig->get($xpath);
-        if(is_null($object)) {
-          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
-        }
 
-        $cmd = "/etc/init.d/sickbeard status";
-        $this->exec($cmd, $output);
-		
+        $object = $xmlConfig->get($this->getXPath());
+
+        if (is_null($object))
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPath());
+
+        $initd = new OMVSysVInitScript($this->getName());
+
         return array(
-            "name"    => $this->getName(),
-            "title"   => gettext("sickbeard"),
-            "enabled" => boolval($object['enable']),
-            "running" => (strpos($output[0], 'is running') > -1)
+            "name"    => $this->getPluginName(),
+            "title"   => gettext($this->getName()),
+            "enabled" => boolval($object["enable"]),
+            "running" => $initd->status() == 0
         );
     }
 
     public function startService() {
         global $xmlConfig;
-        $xpath  = "//services/sickbeard";
-        $object = $xmlConfig->get($xpath);
-        if(is_null($object)) {
-          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
-        }
 
-        if(FALSE === boolval($object['enable'])) {
-          return;
-        }
+        $object = $xmlConfig->get($this->getXPath());
 
-        $cmd = "/etc/init.d/sickbeard status";
-        $this->exec($cmd, $output);
-        if(strpos($output[0], 'failed!') > 0) {
-          $cmd = "/etc/init.d/sickbeard start && update-rc.d sickbeard enable 2>&1";
-          $this->exec($cmd);
-		}
+        if (is_null($object))
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPath());
+
+        if (!boolval($object["enable"]))
+            return;
+
+        $initd = new OMVSysVInitScript($this->getPluginName(), true);
+        $initd->exec();
     }
 
     public function stopService() {
-        global $xmlConfig;
-        $xpath  = "//services/sickbeard";
-        $object = $xmlConfig->get($xpath);
-        if(is_null($object)) {
-          throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
-        }
-
-        if(TRUE === boolval($object['enable'])) {
-            return;
-        }
-
-        $cmd = "/etc/init.d/sickbeard status";
-        $this->exec($cmd, $output);
-        if(strpos($output[0], 'is running') > -1) {
-          $cmd = "/etc/init.d/sickbeard stop && update-rc.d sickbeard disable 2>&1";
-          $this->exec($cmd, $output);
-        }
+        $initd = new OMVSysVInitScript($this->getPluginName());
+        $initd->exec();
     }
 
-    public function bindListeners(OMVNotifyDispatcher $dispatcher) {
+    function bindListeners(OMVNotifyDispatcher $dispatcher) {
         $dispatcher->addListener(
             OMV_NOTIFY_MODIFY,
-            "org.openmediavault.services.sickbeard",
+            $this->getEventMessagePath(),
             array($this, "setDirty"));
+
+        //$dispatcher->addListener(
+        //    OMV_NOTIFY_CREATE | OMV_NOTIFY_MODIFY | OMV_NOTIFY_DELETE,
+        //    $this->getEventMessagePathRepo(),
+        //    array($this, "setDirty"));
+        //    array($this, "setDirty"));
     }
 }
 
 // Register module
 $moduleMgr = &OMVModuleMgr::getInstance();
-$moduleMgr->registerModule(new OMVModulesickbeard());
+$moduleMgr->registerModule(new OMVModuleSickbeard());

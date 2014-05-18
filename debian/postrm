@@ -6,37 +6,42 @@ set -e
 . /usr/share/openmediavault/scripts/helper-functions
 
 case "$1" in
-        purge)
-                rm -Rf /opt/sickbeard & >/dev/null
+    purge)
+        rm -Rf /opt/sickbeard & >/dev/null
 
-                if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
-                        PID=$(cat /var/run/sickbeard/sickbeard.pid);
-                        kill -0 $PID 2>/dev/null;
-                        if [ $? -eq 0 ]; then
-                                kill -9 $PID;
-                                rm -Rf /var/run/sickbeard & >/dev/null
-                        fi
-                fi
-                omv_config_delete "//services/sickbeard"
-                if [ -d "/opt/sickbeard" ]; then
-                       rm -Rf /opt/sickbeard/* & >/dev/null
-                       rm -Rf /opt/sickbeard/.git & >/dev/null
-                       rm -Rf /opt/sickbeard/.gitignore & >/dev/null
-                fi
-                userdel -r sickbeard
-                if [ ! -d /opt ]; then
-                    mkdir /opt
-                    chmod 775 /opt
-                fi
-        ;;
+        if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
+            PID=$(cat /var/run/sickbeard/sickbeard.pid);
+            kill -0 $PID 2>/dev/null;
+
+            if [ $? -eq 0 ]; then
+                kill -9 $PID;
+                rm -Rf /var/run/sickbeard & >/dev/null
+            fi
+        fi
+
+        omv_config_delete "//services/sickbeard"
+
+        if [ -d "/opt/sickbeard" ]; then
+            rm -Rf /opt/sickbeard/* & >/dev/null
+            rm -Rf /opt/sickbeard/.git & >/dev/null
+            rm -Rf /opt/sickbeard/.gitignore & >/dev/null
+        fi
+
+        userdel -r sickbeard
+
+        if [ ! -d /opt ]; then
+            mkdir /opt
+            chmod 775 /opt
+        fi
+    ;;
 
         remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-        ;;
+    ;;
 
-        *)
-                echo "postrm called with unknown argument '$1'" >&2
-                exit 1
-        ;;
+    *)
+        echo "postrm called with unknown argument '$1'" >&2
+        exit 1
+    ;;
 esac
 
 exit 0
