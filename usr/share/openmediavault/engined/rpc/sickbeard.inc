@@ -116,7 +116,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         $this->exec($cmd);
         $object["enable"]  = boolval($object["enable"]);
         $object["showtab"] = boolval($object["showtab"]);
-        $object["port"]    = $output;
+        $object["port"]    = $output[0];
 
         // Remove useless fields from the result object.
         unset($object['forks']);
