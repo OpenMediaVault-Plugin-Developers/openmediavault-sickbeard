@@ -62,6 +62,26 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         return $path;
     }
 
+    public function startService() {
+        global $xmlConfig;
+
+        $object = $xmlConfig->get($this->getXPath());
+
+        if (is_null($object))
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPath());
+
+        if (!boolval($object["enable"]))
+            return;
+
+        $initd = new OMVSysVInitScript($this->getPluginName(), true);
+        $initd->exec();
+    }
+
+    public function stopService() {
+        $initd = new OMVSysVInitScript($this->getPluginName());
+        $initd->exec();
+    }
 
     public function initialize() {
         $this->registerMethod('getSettings');
@@ -87,10 +107,13 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         if(is_null($object))
             throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
 
+        $output = array(); 
         $cmd = "grep -m1 port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
         $this->exec($cmd, $output);
         if ($output == "")
             $output = "8081";
+        $cmd = "sed -i 's/:[[:digit:]]\{4\}/:" . $output[0] . "/g'  /var/www/openmediavault/js/omv/module/admin/service/sickbeard/WebInterface.js";
+        $this->exec($cmd);
         $object["enable"]  = boolval($object["enable"]);
         $object["showtab"] = boolval($object["showtab"]);
         $object["port"]    = $output;
@@ -408,6 +431,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
             // Child process.
             try {
+                $this->stopService();
                 $bgOutputFilename = $this->createBgProcOutput();
                 $this->updateBgProcStatus($bgStatusFilename, "outputfilename", $bgOutputFilename);
 
@@ -415,16 +439,17 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
                 $this->exec($cmd, $output, $bgOutputFilename);
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
+                $this->startService();
                 exit(0);
             } catch(Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
+                $this->startService();
                 exit(1);
-            }			
+            }
         } else {
             throw new OMVException(OMVErrorMsg::E_EXEC_MISC, "No backup found!");
         }
     }
-
 
     public function enumerateRepos($params, $context)
     {

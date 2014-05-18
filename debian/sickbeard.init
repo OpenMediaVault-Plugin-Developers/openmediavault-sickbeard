@@ -54,7 +54,8 @@ fi
 if [ ! -f $DATA_DIR/config.ini ]; then
     echo '[General]
 launch_browser = 0
-git_path = "/usr/bin/git"' > $DATA_DIR/config.ini
+git_path = "/usr/bin/git"
+port = 8081' > $DATA_DIR/config.ini
     chown $RUN_AS $PID_PATH
     chown $RUN_AS $DATA_DIR/config.ini
     chmod 775 $DATA_DIR/config.ini
