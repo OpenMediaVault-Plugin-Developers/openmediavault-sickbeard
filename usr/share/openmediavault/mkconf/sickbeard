@@ -22,19 +22,19 @@ switch_repo() {
     fi
 
     cd /
-    sudo -u $RUN_AS git clone "${repo}" -b "${branch}" "${APP_PATH}"
+    sudo -u $RUN_AS git clone $repo -b $branch $APP_PATH
 }
 
 switch_branch() {
     cd $APP_PATH
     sudo -u $RUN_AS git reset --hard
-    sudo -u $RUN_AS git checkout "${branch}"
+    sudo -u $RUN_AS git checkout $branch
 }
 
 # If /opt/sickbeard does not exists
 # must be first clone
 if [ ! -d $APP_PATH ]; then
-    switch_repo
+    switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
     exit 0
 fi
 
@@ -46,15 +46,15 @@ if [ -n "$(ls -A $APP_PATH)" ]; then
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
     if [ $repo != $current_repo ]; then
-        switch_repo
+        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
         exit 0
     fi
 
     if [ $branch != $current_branch ]; then
-        switch_branch
+        switch_branch $branch $APP_PATH $RUN_AS
         exit 0
     fi
 else
    rm -rf $APP_PATH
-   switch_repo
+   switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
 fi

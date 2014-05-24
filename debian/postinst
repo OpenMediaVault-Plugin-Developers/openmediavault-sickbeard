@@ -32,16 +32,6 @@ case "$1" in
             omv_config_add_element "/config/services" "sickbeard" "${object}" true
         fi
         
-        #Check for new omv_config options
-        if ! omv_config_exists "/config/services/sickbeard/port"; then
-            echo "Extra configuration."
-            object="<port>8081</port>"
-            object="${object}<mntentref></mntentref>"
-            object="${object}<path></path>"
-            object="${object}<forks></forks>"
-            omv_config_add_element "/config/services" "sickbeard" "${object}" true
-        fi
-		
         omv_install_fixperms
 
         # Activate package triggers. These triggers are only set during the
@@ -54,8 +44,8 @@ case "$1" in
     ;;
 
     *)
-    echo "postinst called with unknown argument" >&2
-    exit 1
+        echo "postinst called with unknown argument" >&2
+        exit 1
     ;;
 esac
 

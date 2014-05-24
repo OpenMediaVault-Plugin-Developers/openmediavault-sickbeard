@@ -31,17 +31,17 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
     }
 
     private function getPluginName() {
-        return strtolower( $this->getName());
+        return strtolower($this->getName());
     }
 
     private function getEventMessagePath() {
-        $path = sprintf( "org.openmediavault.service.%s", $this->getPluginName());
+        $path = sprintf("org.openmediavault.service.%s", $this->getPluginName());
         return $path;
     }
 
 
     private function getEventMessagePathFork() {
-        $path = sprintf( "%s.forks.fork", $this->getEventMessagePath());
+        $path = sprintf("%s.forks.fork", $this->getEventMessagePath());
         return $path;
     }
 
@@ -106,8 +106,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
 
         //$dispatcher->addListener(
         //    OMV_NOTIFY_CREATE | OMV_NOTIFY_MODIFY | OMV_NOTIFY_DELETE,
-        //    $this->getEventMessagePathRepo(),
-        //    array($this, "setDirty"));
+        //    $this->getEventMessagePathFork(),
         //    array($this, "setDirty"));
     }
 }

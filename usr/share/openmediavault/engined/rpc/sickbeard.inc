@@ -84,8 +84,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
     }
 
     public function initialize() {
-        $this->registerMethod('getSettings');
-        $this->registerMethod('setSettings');
+        $this->registerMethod("getSettings");
+        $this->registerMethod("setSettings");
         $this->registerMethod("enumerateRepos");
 
         $this->registerMethod("getForks");
@@ -107,13 +107,19 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         if(is_null($object))
             throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
 
-        $output = array(); 
-        $cmd = "grep -m1 port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
-        $this->exec($cmd, $output);
-        if ($output == "")
+        $output = array();
+        if (file_exists("/home/sickbeard/.sickbeard/config.ini")) {
+            $cmd = "grep -m1 port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
+            $this->exec($cmd, $output);
+            if ($output == "")
+                $output = "8081";
+        } else {
             $output = "8081";
+        }
+
         $cmd = "sed -i 's/:[[:digit:]]\{4\}/:" . $output[0] . "/g'  /var/www/openmediavault/js/omv/module/admin/service/sickbeard/WebInterface.js";
         $this->exec($cmd);
+
         $object["enable"]  = boolval($object["enable"]);
         $object["showtab"] = boolval($object["showtab"]);
         $object["port"]    = $output[0];
@@ -137,8 +143,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
                 "sb_branch" : { "type" : "string" },
                 "sb_repo"   : { "type" : "string" },
                 "port"      : { "type" : "integer" },
-                "mntentref" : { "type" : "string" },
-                "path"      : { "type" : "string" }
+                "mntentref" : { ' . $GLOBALS['OMV_JSONSCHEMA_UUID_NONE'] . ' },
+                "path"      : { "type" : "string", "optional" : true }
             }
         }');
 
@@ -309,8 +315,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         return $this->deleteConfigObjectByPath($xpath, $this->getEventMessagePathFork());
 
     }
-	
-	public function getCandidates($params, $context) {
+
+    public function getCandidates($params, $context) {
         global $xmlConfig;
 
         // Validate the RPC caller context.
@@ -356,7 +362,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         }
         return $result;
     }
-	
+
     public function doBackup($params, $context) {
         global $xmlConfig;
 
@@ -387,7 +393,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
             exit(1);
         }
     }
-	
+
     public function doRestore($params, $context) {
         global $xmlConfig;
 
@@ -451,8 +457,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         }
     }
 
-    public function enumerateRepos($params, $context)
-    {
+    public function enumerateRepos($params, $context) {
         global $xmlConfig;
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
 
