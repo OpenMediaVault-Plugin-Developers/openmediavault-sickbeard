@@ -66,7 +66,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
             throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
                 $this->getXPath());
 
-        $initd = new OMVSysVInitScript($this->getName());
+        $initd = new OMVSysVInitScript($this->getPluginName());
 
         return array(
             "name"    => $this->getPluginName(),
