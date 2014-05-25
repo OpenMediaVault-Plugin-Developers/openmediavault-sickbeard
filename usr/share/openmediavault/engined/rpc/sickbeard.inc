@@ -365,6 +365,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
     public function doBackup($params, $context) {
         global $xmlConfig;
+		
+        if (! file_exists("/home/sickbeard/.sickbeard/config.ini"))
+            throw new OMVException(OMVErrorMsg::E_EXEC_MISC, "No settings folder found!");
 
         // Validate the RPC caller context.
         $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));

@@ -52,7 +52,6 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
 
     public function applyConfig() {
         $cmd = sprintf("omv-mkconf %s 2>&1", $this->getPluginName());
-        //$cmd = "sudo omv-mkconf " . $this->getName() . " 2>&1";
 
         if (0 !== $this->exec($cmd, $output))
             throw new OMVException(OMVErrorMsg::E_EXEC_FAILED, $cmd, implode("\n", $output));

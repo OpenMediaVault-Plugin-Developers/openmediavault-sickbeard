@@ -24,10 +24,9 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
     initComponent : function() {
         var me = this;
 
-        var port = "8081";
-        var link = "http://" + location.hostname + ":" + port + "/";
+        var link = "http://" + location.hostname + ":8081/";
 
-        me.html = "<iframe src='" + link + "' width='100%' height='100%' />";
+        me.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
         me.callParent(arguments);
     }
 });
