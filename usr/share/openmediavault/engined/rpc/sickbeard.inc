@@ -109,7 +109,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
 
         $output = array();
         if (file_exists("/home/sickbeard/.sickbeard/config.ini")) {
-            $cmd = "grep -m1 port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
+            $cmd = "grep ^web_port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
             $this->exec($cmd, $output);
             if ($output == "")
                 $output = "8081";
@@ -117,7 +117,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
             $output = "8081";
         }
 
-        $cmd = "sed -i 's/:[[:digit:]]\{4\}/:" . $output[0] . "/g'  /var/www/openmediavault/js/omv/module/admin/service/sickbeard/WebInterface.js";
+        $cmd = "sed -i 's/:[[:digit:]].*\//:" . $output[0] . "\//g'  /var/www/openmediavault/js/omv/module/admin/service/sickbeard/WebInterface.js";
         $this->exec($cmd);
 
         $object["enable"]  = boolval($object["enable"]);
