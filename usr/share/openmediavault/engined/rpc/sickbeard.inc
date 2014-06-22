@@ -111,10 +111,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract {
         if (file_exists("/home/sickbeard/.sickbeard/config.ini")) {
             $cmd = "grep ^web_port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
             $this->exec($cmd, $output);
-            if ($output == "")
-                $output = "8081";
+            if ($output[0] == "")
+                $output[0] = "8081";
         } else {
-            $output = "8081";
+            $output[0] = "8081";
         }
 
         $cmd = "sed -i 's/:[[:digit:]].*\//:" . $output[0] . "\//g'  /var/www/openmediavault/js/omv/module/admin/service/sickbeard/WebInterface.js";
