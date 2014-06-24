@@ -1,4 +1,10 @@
-openmediavault-sickbeard (1.0.0) UNRELEASED; urgency=low
+openmediavault-sickbeard (1.0.1) unstable; urgency=low
+
+  * Fix webserver ports
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 24 Jun 2014 05:39:37 -0500
+
+openmediavault-sickbeard (1.0.0) unstable; urgency=low
 
   * Update for kralizec
 
