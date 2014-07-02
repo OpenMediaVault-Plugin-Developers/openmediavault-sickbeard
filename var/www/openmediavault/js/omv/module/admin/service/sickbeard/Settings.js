@@ -202,7 +202,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                     proxy : {
                         type : "rpc",
                         rpcData : {
-                            service : "Sickbeard",
+                            service : "ShareMgmt",
                             method  : "getCandidates"
                         },
                         appendSortParams : false

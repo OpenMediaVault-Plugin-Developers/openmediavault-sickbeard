@@ -24,9 +24,19 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
     initComponent : function() {
         var me = this;
 
-        var link = "http://" + location.hostname + ":8081/";
+        OMV.Rpc.request({
+            scope    : this,
+            callback : function(id, success, response) {
+                var link = "http://" + window.location.hostname + ":" + response.port;
+                me.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
+            },
+            relayErrors : false,
+            rpcData     : {
+                service  : "Sickbeard",
+                method   : "getSettings"
+            }
+        });
 
-        me.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
         me.callParent(arguments);
     }
 });

@@ -17,54 +17,68 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once "openmediavault/module.inc";
 require_once "openmediavault/config.inc";
 require_once "openmediavault/error.inc";
-require_once "openmediavault/util.inc";
 require_once "openmediavault/initscript.inc";
+require_once "openmediavault/module.inc";
+require_once "openmediavault/util.inc";
 
-class OMVModuleSickbeard extends OMVModuleServiceAbstract
-    implements OMVINotifyListener, OMVIModuleServiceStatus {
-
-    public function getName() {
-        return "Sickbeard";
-    }
-
-    private function getPluginName() {
+class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
+    OMVINotifyListener,
+    OMVIModuleServiceStatus
+{
+    private function getPluginName()
+    {
         return strtolower($this->getName());
     }
 
-    private function getEventMessagePath() {
-        $path = sprintf("org.openmediavault.service.%s", $this->getPluginName());
-        return $path;
+    private function getEventMessagePath()
+    {
+        return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
-
-    private function getEventMessagePathFork() {
+    private function getEventMessagePathFork()
+    {
         $path = sprintf("%s.forks.fork", $this->getEventMessagePath());
         return $path;
     }
 
-    private function getXPath() {
+    private function getXPath()
+    {
         $path = sprintf("//services/%s", $this->getPluginName());
         return $path;
     }
 
-    public function applyConfig() {
-        $cmd = sprintf("omv-mkconf %s 2>&1", $this->getPluginName());
-
-        if (0 !== $this->exec($cmd, $output))
-            throw new OMVException(OMVErrorMsg::E_EXEC_FAILED, $cmd, implode("\n", $output));
+    public function getName()
+    {
+        return "Sickbeard";
     }
 
-    public function getStatus() {
+    public function applyConfig()
+    {
+        $cmd = sprintf("omv-mkconf %s 2>&1", $this->getPluginName());
+
+        if (0 !== $this->exec($cmd, $output)) {
+            throw new OMVException(
+                OMVErrorMsg::E_EXEC_FAILED,
+                $cmd,
+                implode("\n", $output)
+            );
+        }
+    }
+
+    public function getStatus()
+    {
         global $xmlConfig;
 
         $object = $xmlConfig->get($this->getXPath());
 
-        if (is_null($object))
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath());
+        if (is_null($object)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPath()
+            );
+        }
 
         $initd = new OMVSysVInitScript($this->getPluginName());
 
@@ -76,37 +90,40 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract
         );
     }
 
-    public function startService() {
+    public function startService()
+    {
         global $xmlConfig;
 
         $object = $xmlConfig->get($this->getXPath());
 
-        if (is_null($object))
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath());
+        if (is_null($object)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPath()
+            );
+        }
 
-        if (!boolval($object["enable"]))
+        if (!boolval($object["enable"])) {
             return;
+        }
 
         $initd = new OMVSysVInitScript($this->getPluginName(), true);
         $initd->exec();
     }
 
-    public function stopService() {
+    public function stopService()
+    {
         $initd = new OMVSysVInitScript($this->getPluginName());
         $initd->exec();
     }
 
-    function bindListeners(OMVNotifyDispatcher $dispatcher) {
+    public function bindListeners(OMVNotifyDispatcher $dispatcher)
+    {
         $dispatcher->addListener(
             OMV_NOTIFY_MODIFY,
             $this->getEventMessagePath(),
-            array($this, "setDirty"));
-
-        //$dispatcher->addListener(
-        //    OMV_NOTIFY_CREATE | OMV_NOTIFY_MODIFY | OMV_NOTIFY_DELETE,
-        //    $this->getEventMessagePathFork(),
-        //    array($this, "setDirty"));
+            array($this, "setDirty")
+        );
     }
 }
 
