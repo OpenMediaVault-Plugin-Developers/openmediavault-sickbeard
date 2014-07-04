@@ -21,13 +21,16 @@ require_once "openmediavault/config.inc";
 require_once "openmediavault/error.inc";
 require_once "openmediavault/notify.inc";
 require_once "openmediavault/object.inc";
+require_once "openmediavault/product.inc";
 require_once "openmediavault/rpcservice.inc";
+require_once "openmediavault/system.inc";
 require_once "openmediavault/util.inc";
-require_once("openmediavault/product.inc");
-require_once("openmediavault/system.inc");
 
 class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 {
+    private $sickbeardSettingsDir = "/home/sickbeard/.sickbeard/";
+    private $sickbeardSettingsFile = "/home/sickbeard/.sickbeard/config.ini";
+
     private function getPluginName()
     {
         return strtolower($this->getName());
@@ -38,11 +41,6 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
-    private function getEventMessagePathFork()
-    {
-        return sprintf("%s.forks.fork", $this->getEventMessagePath());
-    }
-
     private function getXPath()
     {
         return sprintf("//services/%s", $this->getPluginName());
@@ -50,7 +48,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
     private function getXPathForks()
     {
-        returnsprintf("%s/forks", $this->getXPath());
+        return sprintf("%s/forks", $this->getXPath());
     }
 
     private function getXPathFork()
@@ -61,33 +59,6 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     public function getName()
     {
         return "Sickbeard";
-    }
-
-    public function startService()
-    {
-        global $xmlConfig;
-
-        $object = $xmlConfig->get($this->getXPath());
-
-        if (is_null($object)) {
-            throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath()
-            );
-        }
-
-        if (!boolval($object["enable"])) {
-            return;
-        }
-
-        $initd = new OMVSysVInitScript($this->getPluginName(), true);
-        $initd->exec();
-    }
-
-    public function stopService()
-    {
-        $initd = new OMVSysVInitScript($this->getPluginName());
-        $initd->exec();
     }
 
     public function initialize()
@@ -109,37 +80,40 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     {
         global $xmlConfig;
 
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         $object = $xmlConfig->get($this->getXPath());
 
         if (is_null($object)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $xpath
+                $XPath
             );
         }
 
+        $port = 8081;
+
         // Get current port as set in couchpotatos config file
-        $output = array();
+        if (file_exists($this->sickbeardSettingsFile)) {
+            $config = parse_ini_file(
+                $this->sickbeardSettingsFile,
+                true,
+                INI_SCANNER_RAW
+            );
 
-        if (file_exists("/home/sickbeard/.sickbeard/config.ini")) {
-            $cmd = "grep ^web_port /home/sickbeard/.sickbeard/config.ini | cut -d ' ' -f 3 2>&1";
-            $this->exec($cmd, $output);
-
-            if (strlen($output[0]) != 4) {
-                $output[0] = "8081";
+            if (!empty($config["General"]["port"])) {
+                $port = $config["General"]["port"];
             }
-        } else {
-            $output[0] = "8081";
         }
 
         $object["enable"]  = boolval($object["enable"]);
         $object["showtab"] = boolval($object["showtab"]);
-        $object["port"]    = $output[0];
+        $object["port"]    = intval($port);
 
         // Remove useless fields from the result object.
-        unset($object['forks']);
+        unset($object["forks"]);
 
         return $object;
     }
@@ -148,7 +122,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     {
         global $xmlConfig;
 
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         $this->validateMethodParams(
             $params,
@@ -166,8 +142,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             }'
         );
 
-        $xpath = sprintf("//system/fstab/mntent[uuid='%s']", $params["mntentref"]);
-        $deviceDir = $xmlConfig->get($xpath);
+        $xPath = sprintf("//system/fstab/mntent[uuid='%s']", $params["mntentref"]);
+        $deviceDir = $xmlConfig->get($xPath);
         $deviceDir = $deviceDir["dir"];
 
         $backupPath = "$deviceDir/SBbackup";
@@ -179,19 +155,19 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if (is_null($oldObject)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $xpath
+                $xPath
             );
         }
 
         $object = array(
             "enable"    => array_boolval($params, "enable"),
             "showtab"   => array_boolval($params, "showtab"),
-            "sb_branch" => $params['sb_branch'],
-            "sb_repo"   => $params['sb_repo'],
+            "branch" => $params["branch"],
+            "repo"   => $params["repo"],
             "port"      => $params["port"],
             "mntentref" => $params["mntentref"],
             "path"      => $params["path"],
-            "forks"     => isset($oldObject['forks']) ? $oldObject['forks'] : array(),
+            "forks"     => isset($oldObject["forks"]) ? $oldObject["forks"] : array(),
         );
 
         if (false === $xmlConfig->replace($this->getXPath(), $object)) {
@@ -202,7 +178,11 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         }
 
         $dispatcher = &OMVNotifyDispatcher::getInstance();
-        $dispatcher->notify(OMV_NOTIFY_MODIFY, $this->getEventMessagePath(), $object);
+        $dispatcher->notify(
+            OMV_NOTIFY_MODIFY,
+            $this->getEventMessagePath(),
+            $object
+        );
 
         return $object;
     }
@@ -232,7 +212,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         $objects = $xmlConfig->getList($this->getXPathFork());
 
         if (is_null($objects)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $XPath);
         }
 
         // Filter the result.
@@ -245,13 +225,14 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
     }
 
-
     public function getFork($params, $context)
     {
         global $xmlConfig;
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams(
@@ -265,11 +246,14 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
 
         // Get the configuration object.
-        $xpath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
-        $object = $xmlConfig->get($xpath);
+        $xPath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
+        $object = $xmlConfig->get($xPath);
 
         if (is_null($object)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $xPath
+            );
         }
 
         return $object;
@@ -280,7 +264,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         global $xmlConfig;
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams(
@@ -288,22 +274,29 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             '{
                 "type"       : "object",
                 "properties" : {
-                    "uuid"     : { ' . $GLOBALS["OMV_JSONSCHEMA_UUID_UNDEFINED"] . ' },
-                    "name"     : { "type" : "string" },
-                    "fork"     : { "type" : "string" }
+                    "uuid" : { ' . $GLOBALS["OMV_JSONSCHEMA_UUID_UNDEFINED"] . ' },
+                    "name" : { "type" : "string" },
+                    "fork" : { "type" : "string" }
                 }
             }'
         );
 
-        // TODO: Check if valid fork. A valid fork should start with either http(s):// or git://
+        // Check if valid fork. A valid fork should start with
+        // either http(s):// or git://
         if (substr($params["fork"], 0, 4) !== "http" &&
             substr($params["fork"], 0, 3) !== "git"
         ) {
-            throw new OMVException(OMVErrorMsg::E_EXEC_MISC, "Not valid git repo");
+            throw new OMVException(
+                OMVErrorMsg::E_EXEC_MISC,
+                "Not valid git repo"
+            );
         }
 
-        // If valid query repo for a list of branches.
-        $cmd = "git ls-remote -h " . $params["fork"] . " | sed 's?.*refs/heads/??'";
+        // Query repo for a list of branches.
+        $cmd = "git ls-remote -h "
+             . $params["fork"]
+             . " | sed 's?.*refs/heads/??'";
+
         $this->exec($cmd, $output);
 
         if (empty($output)) {
@@ -322,7 +315,8 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
         // Prepare configuration data and add all branches found
         $object = array(
-            "uuid"        => ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"]) ? OMVUtil::uuid() : $params["uuid"],
+            "uuid"        => ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"])
+                ? OMVUtil::uuid() : $params["uuid"],
             "name"        => $params["name"],
             "fork"        => $params["fork"],
             "branches"    => $output,
@@ -333,23 +327,22 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
         if ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"]) {
             // Append object to configuration.
-            $success = $xmlConfig->set($this->getXPathForks(), array("fork" => $object));
+            $success = $xmlConfig->set(
+                $this->getXPathForks(),
+                array("fork" => $object)
+            );
         } else {
             // Update existing configuration object.
-            $xpath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
+            $xPath = sprintf(
+                "%s[uuid='%s']",
+                $this->getXPathFork(),
+                $params["uuid"]
+            );
         }
 
         if ($success === false) {
             throw new OMVException(OMVErrorMsg::E_CONFIG_SET_OBJECT_FAILED);
         }
-
-        // Notify configuration changes.
-        $dispatcher = &OMVNotifyDispatcher::getInstance();
-        $dispatcher->notify(
-            ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"]) ?OMV_NOTIFY_CREATE : OMV_NOTIFY_MODIFY,
-            $this->getEventMessagePathFork(),
-            $object
-        );
 
         // Return the configuration object.
         return $object;
@@ -360,7 +353,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         global $xmlConfig;
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams(
@@ -374,21 +369,28 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
 
         // Delete the configuration object.
-        $xpath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
+        $xPath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
 
-        return $this->deleteConfigObjectByPath($xpath, $this->getEventMessagePathFork());
+        return $this->deleteConfigObjectByPath($xPath);
     }
 
     public function doBackup($params, $context)
     {
         global $xmlConfig;
-        //Sickbeard needs to have run once to generate its settings. Check if this is true
-        if (! file_exists("/home/sickbeard/.sickbeard/config.ini")) {
-            throw new OMVException(OMVErrorMsg::E_EXEC_MISC, "No settings folder found!");
+
+        // Sickbeard needs to have run once to generate its
+        // settings. Check if this is true
+        if (!file_exists($this->sickbeardSettingsFile)) {
+            throw new OMVException(
+                OMVErrorMsg::E_EXEC_MISC,
+                "No settings folder found!"
+            );
         }
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Create a background process.
         $bgStatusFilename = $this->createBgProcStatus();
@@ -403,11 +405,22 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         // Child process.
         try {
             $bgOutputFilename = $this->createBgProcOutput();
-            $this->updateBgProcStatus($bgStatusFilename, "outputfilename", $bgOutputFilename);
+            $this->updateBgProcStatus(
+                $bgStatusFilename,
+                "outputfilename",
+                $bgOutputFilename
+            );
 
-            $path = $xmlConfig->get("//services/sickbeard/path");
+            // Get the configuration object.
+            $xPath = sprintf("%s/path", $this->getXPath());
+            $backupPath = $xmlConfig->get($xPath);
 
-            $cmd = sprintf("tar -zcvf %s /home/sickbeard/.sickbeard 2>&1", $path);
+            $cmd = sprintf(
+                "tar -zcvPf %s %s 2>&1",
+                $backupPath,
+                $this->sickbeardSettingsDir
+            );
+
             $this->exec($cmd, $output, $bgOutputFilename);
             $this->finalizeBgProcStatus($bgStatusFilename, $output);
             exit(0);
@@ -422,43 +435,59 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         global $xmlConfig;
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array( "role" => OMV_ROLE_ADMINISTRATOR ));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Get the configuration object.
-        $path = $xmlConfig->get("//services/sickbeard/path");
-        $dirPath = "/home/sickbeard/.sickbeard";
-        if(is_null($path)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+        $xPath = sprintf("%s/path", $this->getXPath());
+        $backupPath = $xmlConfig->get($xPath);
+
+        if (is_null($backupPath)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $xPath
+            );
         }
 
         // Check if backup is present.
-        if (file_exists($path)) {
+        if (file_exists($backupPath)) {
             // Create a background process.
             $bgStatusFilename = $this->createBgProcStatus();
             $pid = $this->fork();
-            if ($pid > 0) { // Parent process.
+
+            // Parent process.
+            if ($pid > 0) {
                 $this->initializeBgProcStatus($bgStatusFilename, $pid);
                 return $bgStatusFilename;
             }
 
             // Delete current settings folder
-            system("rm -rf " . escapeshellarg($dirPath));
+            rmdir($this->sickbeardSettingsDir);
+
+            // Get the Sickbeard module
+            $moduleMgr = &OMVModuleMgr::getInstance();
+            $sickbeardModule = $moduleMgr->getModule($this->getName());
 
             // Child process.
             try {
-                $this->stopService();
+                $sickbeardModule->stopService();
                 $bgOutputFilename = $this->createBgProcOutput();
-                $this->updateBgProcStatus($bgStatusFilename, "outputfilename", $bgOutputFilename);
+                $this->updateBgProcStatus(
+                    $bgStatusFilename,
+                    "outputfilename",
+                    $bgOutputFilename
+                );
 
-                $cmd = sprintf("tar -zxvf %s -C / 2>&1", $path);
+                $cmd = sprintf("tar -zxvf %s -C / 2>&1", $backupPath);
 
                 $this->exec($cmd, $output, $bgOutputFilename);
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
-                $this->startService();
+                $sickbeardModule->startService();
                 exit(0);
             } catch (\Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
-                $this->startService();
+                $sickbeardModule->startService();
                 exit(1);
             }
         } else {
@@ -470,17 +499,24 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     {
         global $xmlConfig;
 
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Get configuration data.
-        $objects = $xmlConfig->getList($this->getXPathFork());
+        $userRepos = $xmlConfig->getList($this->getXPathFork());
 
-        if (is_null($objects)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $xpath);
+        if (is_null($userRepos)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXPathFork()
+            );
         }
-        // Add default fork and its branches. Do it here so users can't delete the main branch.
-        $repo = array(
-            "0" => array(
+
+        // Add default repos and their branches. Do it here so users can't
+        // delete them.
+        $defaultRepos = array(
+            array(
                 "uuid" => "11111111-2222-3333-4444-555555555555",
                 "name" => "Main Branch",
                 "fork" => "https://github.com/midgetspy/Sick-Beard.git",
@@ -497,10 +533,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "windows_binaries",
                     "xmpp"
                 )
-            )
+            ),
         );
-        // Add any user added forks and branches
-        $repos = array_merge($repo, $objects);
+
+        $repos = array_merge($defaultRepos, $userRepos);
 
         return $repos;
     }

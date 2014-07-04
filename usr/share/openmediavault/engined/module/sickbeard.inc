@@ -37,16 +37,9 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
         return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
-    private function getEventMessagePathFork()
-    {
-        $path = sprintf("%s.forks.fork", $this->getEventMessagePath());
-        return $path;
-    }
-
     private function getXPath()
     {
-        $path = sprintf("//services/%s", $this->getPluginName());
-        return $path;
+        return sprintf("//services/%s", $this->getPluginName());
     }
 
     public function getName()

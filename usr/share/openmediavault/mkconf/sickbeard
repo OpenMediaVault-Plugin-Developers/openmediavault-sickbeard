@@ -6,8 +6,8 @@ set -e
 . /usr/share/openmediavault/scripts/helper-functions
 
 APP_PATH="/opt/sickbeard"
-repo="$(omv_config_get "//services/sickbeard/sb_repo")"
-branch="$(omv_config_get "//services/sickbeard/sb_branch")"
+repo="$(omv_config_get "//services/sickbeard/repo")"
+branch="$(omv_config_get "//services/sickbeard/branch")"
 RUN_AS="sickbeard"
 DATA_DIR="/home/sickbeard/.sickbeard"
 CONFIG="/home/sickbeard/.sickbeard/config.ini"

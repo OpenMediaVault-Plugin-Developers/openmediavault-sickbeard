@@ -86,7 +86,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 checked    : false
             },{
                 xtype      : "combo",
-                name       : "sb_repo",
+                name       : "repo",
                 fieldLabel : "Repository",
                 allowBlank : false,
                 editable   : false,
@@ -138,7 +138,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 }
             },{
                 xtype         : "combo",
-                name          : "sb_branch",
+                name          : "branch",
                 fieldLabel    : _("Branch"),
                 queryMode     : "local",
                 store         : [],
@@ -276,7 +276,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
 
     updateBranchCombo : function(values) {
         var me = this;
-        var branchCombo = me.findField("sb_branch");
+        var branchCombo = me.findField("branch");
 
         branchCombo.store.removeAll();
 

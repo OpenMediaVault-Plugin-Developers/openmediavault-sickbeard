@@ -27,8 +27,8 @@ case "$1" in
             echo "Initial configuration."
             object="<enable>0</enable>"
             object="${object}<showtab>0</showtab>"
-            object="${object}<sb_branch>0</sb_branch>"
-            object="${object}<sb_repo></sb_repo>"
+            object="${object}<branch>0</branch>"
+            object="${object}<repo></repo>"
             omv_config_add_element "/config/services" "sickbeard" "${object}" true
         fi
         
