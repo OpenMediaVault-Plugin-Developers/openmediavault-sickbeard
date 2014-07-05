@@ -167,7 +167,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 handler : function() {
                     var me = this;
                     var port = me.getForm().findField("port").getValue();
-                    var link = "http://" + location.hostname + ":" + port + "/";
+                    var link = "http://" + location.hostname + ":" + port + "/home/";
                     window.open(link, "_blank");
                 },
                 margin : "0 0 5 0"

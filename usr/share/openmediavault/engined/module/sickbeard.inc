@@ -39,7 +39,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
 
     private function getXPath()
     {
-        return sprintf("//services/%s", $this->getPluginName());
+        return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
     public function getName()

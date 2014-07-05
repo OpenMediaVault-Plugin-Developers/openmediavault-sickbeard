@@ -89,7 +89,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if (is_null($object)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $XPath
+                $this->getXPath()
             );
         }
 
@@ -105,6 +105,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
             if (!empty($config["General"]["port"])) {
                 $port = $config["General"]["port"];
+            }
+
+            if (!empty($config["General"]["web_port"])) {
+                $port = $config["General"]["web_port"];
             }
         }
 
@@ -155,15 +159,15 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if (is_null($oldObject)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $xPath
+                $this->getXPath()
             );
         }
 
         $object = array(
             "enable"    => array_boolval($params, "enable"),
             "showtab"   => array_boolval($params, "showtab"),
-            "branch" => $params["branch"],
-            "repo"   => $params["repo"],
+            "branch"    => $params["branch"],
+            "repo"      => $params["repo"],
             "port"      => $params["port"],
             "mntentref" => $params["mntentref"],
             "path"      => $params["path"],
@@ -212,7 +216,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         $objects = $xmlConfig->getList($this->getXPathFork());
 
         if (is_null($objects)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $XPath);
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $this->getXPathFork());
         }
 
         // Filter the result.
@@ -424,7 +428,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             $this->exec($cmd, $output, $bgOutputFilename);
             $this->finalizeBgProcStatus($bgStatusFilename, $output);
             exit(0);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
             exit(1);
         }
@@ -485,7 +489,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
                 $sickbeardModule->startService();
                 exit(0);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
                 $sickbeardModule->startService();
                 exit(1);

@@ -27,7 +27,7 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
         OMV.Rpc.request({
             scope    : this,
             callback : function(id, success, response) {
-                var link = "http://" + window.location.hostname + ":" + response.port;
+                var link = "http://" + window.location.hostname + ":" + response.port + "/home/";
                 me.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
             },
             relayErrors : false,
