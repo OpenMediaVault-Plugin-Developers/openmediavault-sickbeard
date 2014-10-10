@@ -27,11 +27,13 @@ case "$1" in
             echo "Initial configuration."
             object="<enable>0</enable>"
             object="${object}<showtab>0</showtab>"
-            object="${object}<branch>0</branch>"
-            object="${object}<repo></repo>"
+            object="${object}<ssl>0</ssl>"
+            object="${object}<branch>Please choose a branch</branch>"
+            object="${object}<repo>Please choose a repository</repo>"
+            object="${object}<forks></forks>"
             omv_config_add_element "/config/services" "sickbeard" "${object}" true
         fi
-        
+
         omv_install_fixperms
 
         # Activate package triggers. These triggers are only set during the
