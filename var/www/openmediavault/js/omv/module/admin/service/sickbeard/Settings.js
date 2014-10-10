@@ -85,6 +85,12 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 boxLabel   : _("Show tab containing Sickbeard web interface frame."),
                 checked    : false
             },{
+                xtype      : "checkbox",
+                name       : "ssl",
+                fieldLabel : _("SSL"),
+                boxLabel   : _("Auto enable SSL. An OpenMediaVault certificate must have been generated."),
+                checked    : false
+            },{
                 xtype      : "combo",
                 name       : "repo",
                 fieldLabel : "Repository",
@@ -239,10 +245,29 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 border : false,
                 html   : "<ul><li>" + _("Restore settings from a data drive.") + "</li></ul>"
             }]
+            },{
+            xtype    : "fieldset",
+            title    : "Second version",
+            defaults : {
+                labelSeparator : ""
+            },
+            items : [{
+                xtype      : "checkbox",
+                name       : "newinstance",
+                fieldLabel : _("Enable"),
+                boxLabel   : _("Will create second configuration. Unticking will remove everything."),
+                checked    : false
+            },{
+                xtype      : "checkbox",
+                name       : "newinstenable",
+                fieldLabel : _("Run"),
+                boxLabel   : _("Will run the second instance of SickBeard. Use to start/stop the second service."),
+                checked    : false
+            }]
         }];
     },
-	
-	onBackupButton: function() {
+
+    onBackupButton: function() {
         var me = this;
         me.doSubmit();
         Ext.create("OMV.window.Execute", {
@@ -258,7 +283,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
         }).show();
     },
 
-	onRestoreButton: function() {
+    onRestoreButton: function() {
         var me = this;
         me.doSubmit();
         Ext.create("OMV.window.Execute", {

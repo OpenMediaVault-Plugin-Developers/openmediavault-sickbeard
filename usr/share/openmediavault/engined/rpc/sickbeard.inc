@@ -112,9 +112,12 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             }
         }
 
-        $object["enable"]  = boolval($object["enable"]);
-        $object["showtab"] = boolval($object["showtab"]);
-        $object["port"]    = intval($port);
+        $object["enable"]         = boolval($object["enable"]);
+        $object["showtab"]        = boolval($object["showtab"]);
+        $object["port"]           = $output[0];
+        $object["newinstance"]    = boolval($object["newinstance"]);
+        $object["newinstenable"]  = boolval($object["newinstenable"]);
+        $object["ssl"]            = boolval($object["ssl"]);
 
         // Remove useless fields from the result object.
         unset($object["forks"]);
@@ -130,21 +133,21 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             "role" => OMV_ROLE_ADMINISTRATOR
         ));
 
-        $this->validateMethodParams(
-            $params,
-            '{
-                "type"       : "object",
-                "properties" : {
-                    "enable"    : { "type" : "boolean" },
-                    "showtab"   : { "type" : "boolean" },
-                    "branch"    : { "type" : "string" },
-                    "repo"      : { "type" : "string" },
-                    "port"      : { "type" : "integer" },
-                    "mntentref" : { ' . $GLOBALS["OMV_JSONSCHEMA_UUID_NONE"] . ' },
-                    "path"      : { "type" : "string", "optional" : true }
-                }
-            }'
-        );
+        $this->validateMethodParams($params, '{
+            "type"       : "object",
+            "properties" : {
+                "enable"        : { "type" : "boolean" },
+                "showtab"       : { "type" : "boolean" },
+                "newinstance"   : { "type" : "boolean" },
+                "newinstenable" : { "type" : "boolean" },
+                "ssl"           : { "type" : "boolean" },
+                "branch"        : { "type" : "string" },
+                "repo"          : { "type" : "string" },
+                "port"          : { "type" : "integer" },
+                "mntentref"     : { ' . $GLOBALS['OMV_JSONSCHEMA_UUID_NONE'] . ' },
+                "path"          : { "type" : "string", "optional" : true }
+            }
+        }');
 
         $xPath = sprintf("//system/fstab/mntent[uuid='%s']", $params["mntentref"]);
         $deviceDir = $xmlConfig->get($xPath);
@@ -164,14 +167,17 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         }
 
         $object = array(
-            "enable"    => array_boolval($params, "enable"),
-            "showtab"   => array_boolval($params, "showtab"),
-            "branch"    => $params["branch"],
-            "repo"      => $params["repo"],
-            "port"      => $params["port"],
-            "mntentref" => $params["mntentref"],
-            "path"      => $params["path"],
-            "forks"     => isset($oldObject["forks"]) ? $oldObject["forks"] : array(),
+            "enable"        => array_boolval($params, "enable"),
+            "showtab"       => array_boolval($params, "showtab"),
+            "newinstance"   => array_boolval($params, "newinstance"),
+            "newinstenable" => array_boolval($params, "newinstenable"),
+            "ssl" => array_boolval($params, "ssl"),
+            "branch"        => $params['branch'],
+            "repo"          => $params["repo"],
+            "port"          => $params["port"],
+            "mntentref"     => $params["mntentref"],
+            "path"          => $params["path"],
+            "forks"         => isset($oldObject['forks']) ? $oldObject['forks'] : array(),
         );
 
         if (false === $xmlConfig->replace($this->getXPath(), $object)) {

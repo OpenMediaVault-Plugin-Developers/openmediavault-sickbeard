@@ -5,12 +5,17 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-APP_PATH="/opt/sickbeard"
 repo="$(omv_config_get "//services/sickbeard/repo")"
 branch="$(omv_config_get "//services/sickbeard/branch")"
+#newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
+#newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
+
 RUN_AS="sickbeard"
+APP_PATH="/opt/sickbeard"
 DATA_DIR="/home/sickbeard/.sickbeard"
-CONFIG="/home/sickbeard/.sickbeard/config.ini"
+CONFIG="${DATA_DIR}/config.ini"
+DATA_DIR2="/home/sickbeard/.sickbeard2"
+CONFIG2="${DATA_DIR2}/config.ini"
 
 switch_repo() {
     if [ -d $APP_PATH ]; then
@@ -19,6 +24,7 @@ switch_repo() {
 
     if [ -d $DATA_DIR ]; then
         rm -Rf $DATA_DIR
+        rm -Rf $DATA_DIR2
     fi
 
     cd /
@@ -34,7 +40,7 @@ switch_branch() {
 # If /opt/sickbeard does not exists
 # must be first clone
 if [ ! -d $APP_PATH ]; then
-    switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
+    switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
     exit 0
 fi
 
@@ -46,7 +52,7 @@ if [ -n "$(ls -A $APP_PATH)" ]; then
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
     if [ $repo != $current_repo ]; then
-        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
+        switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
         exit 0
     fi
 
@@ -56,5 +62,209 @@ if [ -n "$(ls -A $APP_PATH)" ]; then
     fi
 else
    rm -rf $APP_PATH
-   switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS
+   switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
 fi
+
+if [ "$(omv_config_get "//services/sickbeard/newinstance")" = "1" ]; then
+    if  [ ! -f /etc/init.d/sickbeard2 ]; then
+        sudo -u $RUN_AS mkdir $DATA_DIR2
+        cat <<EOF > /etc/init.d/sickbeard2
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          sb2
+# Required-Start:    \$local_fs \$network \$remote_fs
+# Required-Stop:     \$local_fs \$network \$remote_fs
+# Should-Start:      \$NetworkManager
+# Should-Stop:       \$NetworkManager
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts instance of Sb2
+# Description:       starts instance of Sb2 using start-stop-daemon
+### END INIT INFO
+
+set -e
+
+############### BEGIN EDIT ME ################
+RUN_AS=sickbeard
+RUN_GRP=users
+APP_PATH=/opt/sickbeard
+DAEMON=/usr/bin/python
+PID_FILE=/var/run/sickbeard/sickbeard2.pid
+PID_PATH=\$(dirname \$PID_FILE)
+NAME=sickbeard
+DESC=sickbeard
+DATA_DIR=/home/sickbeard/.sickbeard2
+EXTRA_DAEMON_OPTS=" --config=\${DATA_DIR}/config.ini"
+DAEMON_OPTS=" \${APP_PATH}/SickBeard.py -q --daemon --nolaunch --pidfile=\${PID_FILE} --datadir=\${DATA_DIR} \${EXTRA_DAEMON_OPTS}"
+############### END EDIT ME ##################
+
+# Get lsb functions
+. /lib/lsb/init-functions
+
+# Create PID directory if not exist and ensure the Sickbeard user can write to it
+if [ ! -d \$PID_PATH ]; then
+    mkdir -p \$PID_PATH
+    chown \$RUN_AS \$PID_PATH
+fi
+
+# Create DATA_DIR directory if not exist and ensure the Sickbeard user can write to it
+if [ ! -d \$DATA_DIR ]; then
+    mkdir -p \$DATA_DIR
+    chown \$RUN_AS \$DATA_DIR
+fi
+
+if [ -e \$PID_FILE ]; then
+    PID=`cat \$PID_FILE`
+    if ! kill -0 \$PID > /dev/null 2>&1; then
+        echo "Removing stale \$PID_FILE"
+        rm \$PID_FILE
+    fi
+fi
+
+if [ ! -f \$DATA_DIR/config.ini ]; then
+    echo '[General]
+launch_browser = 0
+git_path = "/usr/bin/git"
+port = 8082
+host = 0.0.0.0
+web_port = 8082
+web_host = 0.0.0.0' > \$DATA_DIR/config.ini
+    chown \$RUN_AS \$PID_PATH
+    chown \$RUN_AS \$DATA_DIR/config.ini
+    chmod 775 \$DATA_DIR/config.ini
+fi
+
+is_running() {
+  if [ ! -e \$PID_FILE ]; then
+    return 1
+  fi
+  return 0
+}
+
+start() {
+  if ! is_running; then
+    echo "Starting \$DESC"
+    sudo -u \$RUN_AS \$DAEMON \$DAEMON_OPTS &> /dev/null 2>&1
+  else
+    echo "\$DESC is running"
+  fi
+}
+
+stop() {
+  if is_running; then
+    echo "Stopping \$DESC"
+    start-stop-daemon --stop --pidfile \$PID_FILE --retry 15
+  fi
+}
+
+restart() {
+  if is_running; then
+    stop
+  fi
+  echo "Restarting \$DESC"
+  start
+}
+
+case "\$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  status)
+    status_of_proc -p \$PID_FILE "\$DAEMON" "\$NAME"
+    ;;
+  *)
+    echo "Usage: \$0 {start|stop|restart|uninstall}"
+esac
+EOF
+        chmod +x /etc/init.d/sickbeard2
+        insserv -d sickbeard2
+    fi
+    if [ "$(omv_config_get "//services/sickbeard/newinstenable")" = "1" ]; then
+        invoke-rc.d --quiet sickbeard2 start &>/dev/null
+    else
+        invoke-rc.d --quiet sickbeard2 stop &>/dev/null
+        if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
+            PID=$(cat /var/run/sickbeard/sickbeard2.pid);
+            kill -0 $PID 2>/dev/null;
+
+            if [ $? -eq 0 ]; then
+                kill -9 $PID;
+            fi
+        fi
+    fi
+else
+    if  [ -f "/etc/init.d/sickbeard2" ]; then
+        invoke-rc.d --quiet sickbeard2 stop &>/dev/null
+        if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
+            PID=$(cat /var/run/sickbeard/sickbeard2.pid);
+            kill -0 $PID 2>/dev/null;
+
+            if [ $? -eq 0 ]; then
+                kill -9 $PID;
+            fi
+        fi
+
+        rm -Rf $DATA_DIR2
+        rm -Rf /etc/init.d/sickbeard2
+    fi
+fi
+
+if [ "$(omv_config_get "//services/sickbeard/ssl")" = "1" ]; then
+    if [ ! -f "/home/sickbeard/Certificate.crt" ]; then
+        CERTIFICATE_DIR=/home/sickbeard
+        # Create the certificate files.
+        xmlstarlet sel -t -m "//system/certificates/sslcertificate" \
+          -v uuid -i "position() != last()" -n -b \
+          ${OMV_CONFIG_FILE} | xmlstarlet unesc |
+          while read uuid; do
+                  crtfile="${CERTIFICATE_DIR}/Certificate.crt"
+                  xmlstarlet sel -t -m "//system/certificates/sslcertificate[uuid='${uuid}']" \
+                        -v certificate \
+                        ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${crtfile}
+                  chmod 0640 ${crtfile}
+                  chown sickbeard:users ${crtfile}
+
+                  keyfile="${CERTIFICATE_DIR}/Private.key"
+                  xmlstarlet sel -t -m "//system/certificates/sslcertificate[uuid='${uuid}']" \
+                        -v privatekey \
+                        ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${keyfile}
+                  chmod 0600 ${keyfile}
+                  chown sickbeard:users ${keyfile}
+          done
+        #Enable
+        sed -i 's/^enable_https.*/enable_https = 1/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' /home/sickbeard/.sickbeard/config.ini
+    fi
+else
+    if [ -f "/home/sickbeard/Certificate.crt" ]; then
+        #Disable
+        sed -i 's/^enable_https.*/enable_https = 0/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^https_cert.*/https_cert = server.crt/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^https_key.*/https_key = server.key/' /home/sickbeard/.sickbeard/config.ini
+        rm /home/sickbeard/Certificate.crt
+        rm /home/sickbeard/Private.key
+    fi
+fi
+
+#/home/sickbeard/.sickbeard/config.ini
+#enable_https = 0
+#https_cert = server.crt
+#https_key = server.key
+#
+#
+#/home/couchpotato/.couchpotato/settings.conf
+#ssl_key =
+#ssl_cert =
+#
+#
+#
+#

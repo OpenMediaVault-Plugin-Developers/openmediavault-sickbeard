@@ -7,17 +7,26 @@ set -e
 
 case "$1" in
     purge)
-        rm -Rf /opt/sickbeard & >/dev/null
-
         if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
             PID=$(cat /var/run/sickbeard/sickbeard.pid);
             kill -0 $PID 2>/dev/null;
 
             if [ $? -eq 0 ]; then
                 kill -9 $PID;
-                rm -Rf /var/run/sickbeard & >/dev/null
             fi
         fi
+
+        if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
+            PID=$(cat /var/run/sickbeard/sickbeard2.pid);
+            kill -0 $PID 2>/dev/null;
+
+            if [ $? -eq 0 ]; then
+                kill -9 $PID;
+            fi
+        fi
+
+        rm -Rf /var/run/sickbeard & >/dev/null
+        rm -Rf /opt/sickbeard & >/dev/null
 
         omv_config_delete "//services/sickbeard"
 
