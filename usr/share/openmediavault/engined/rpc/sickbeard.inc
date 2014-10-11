@@ -171,17 +171,23 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             );
         }
 
-        // Check if ssl certs are available
-        //if ($params["ssl"] == "1") {
-        //     $cmd = "ls /etc/ssl/private/openmediavault-*.key";
-        //     $this->exec($cmd, $output);
-        //     if ($output[0] == "ls: cannot access /etc/ssl/private/openmediavault-*.key: No such file or directory") {
-        //         throw new OMVException(
-        //             OMVErrorMsg::E_EXEC_MISC,
-        //             substr($output, 0, 5) . "No Certs were found, can not enable SSL"
-        //         );
-        //     }
-        //}
+        // Run checks to verify sellected settings
+        if ($params["ssl"] == "1") {
+            if ($params["ppass"] == "1") {
+                throw new OMVException(
+                    OMVErrorMsg::E_EXEC_MISC,
+                    "You can not enable both SSL and Proxy Pass."
+                );
+            }
+            $xSsl = $xmlConfig->get("//webadmin/enablessl");
+            if ($xSsl == "1") {
+                throw new OMVException(
+                    OMVErrorMsg::E_EXEC_MISC,
+                    "You have SSL enabled for the main UI, Do NOT enable it here as well."
+                );
+            }
+        }
+        //Checks finished, still need a way of checking if a cert has been generated.
 
         $object = array(
             "enable"        => array_boolval($params, "enable"),
