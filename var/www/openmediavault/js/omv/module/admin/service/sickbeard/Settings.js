@@ -22,8 +22,8 @@
 // require("js/omv/form/plugin/LinkedFields.js")
 
 Ext.define("OMV.module.admin.service.sickbeard.Settings", {
-    extend : "OMV.workspace.form.Panel",
-    uses   : [
+    extend   : "OMV.workspace.form.Panel",
+    requires : [
         "OMV.data.Model",
         "OMV.data.Store"
     ],
@@ -31,15 +31,15 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
     initComponent : function () {
         var me = this;
 
-        me.on('load', function () {
-            var checked = me.findField('enable').checked;
-            var showtab = me.findField('showtab').checked;
-            var parent = me.up('tabpanel');
+        me.on("load", function () {
+            var checked = me.findField("enable").checked;
+            var showtab = me.findField("showtab").checked;
+            var parent = me.up("tabpanel");
 
             if (!parent)
                 return;
 
-            var managementPanel = parent.down('panel[title=' + _("Web Interface") + ']');
+            var managementPanel = parent.down("panel[title=" + _("Web Interface") + "]");
 
             if (managementPanel) {
                 checked ? managementPanel.enable() : managementPanel.disable();
@@ -91,9 +91,15 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 boxLabel   : _("Auto enable SSL. An OpenMediaVault certificate must have been generated."),
                 checked    : false
             },{
+                xtype      : "checkbox",
+                name       : "ppass",
+                fieldLabel : _("Proxy Pass"),
+                boxLabel   : _("Enable this to access via OMV_IP/sickbeard"),
+                checked    : false
+            },{
                 xtype      : "combo",
                 name       : "repo",
-                fieldLabel : "Repository",
+                fieldLabel : _("Repository"),
                 allowBlank : false,
                 editable   : false,
                 queryMode  : "local",
@@ -164,7 +170,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 maxValue: 65535,
                 allowDecimals: false,
                 allowBlank: false,
-                value: 21
+                value: 8081
             },{
                 xtype   : "button",
                 name    : "opensickbeard",

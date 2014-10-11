@@ -95,7 +95,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
         $port = 8081;
 
-        // Get current port as set in couchpotatos config file
+        // Get current port as set in sickbeards config file
         if (file_exists($this->sickbeardSettingsFile)) {
             $config = parse_ini_file(
                 $this->sickbeardSettingsFile,
@@ -114,10 +114,11 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
         $object["enable"]         = boolval($object["enable"]);
         $object["showtab"]        = boolval($object["showtab"]);
-        $object["port"]           = $output[0];
         $object["newinstance"]    = boolval($object["newinstance"]);
         $object["newinstenable"]  = boolval($object["newinstenable"]);
         $object["ssl"]            = boolval($object["ssl"]);
+        $object["ppass"]          = boolval($object["ppass"]);
+        $object["port"]           = intval($port);
 
         // Remove useless fields from the result object.
         unset($object["forks"]);
@@ -133,21 +134,25 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             "role" => OMV_ROLE_ADMINISTRATOR
         ));
 
-        $this->validateMethodParams($params, '{
-            "type"       : "object",
-            "properties" : {
-                "enable"        : { "type" : "boolean" },
-                "showtab"       : { "type" : "boolean" },
-                "newinstance"   : { "type" : "boolean" },
-                "newinstenable" : { "type" : "boolean" },
-                "ssl"           : { "type" : "boolean" },
-                "branch"        : { "type" : "string" },
-                "repo"          : { "type" : "string" },
-                "port"          : { "type" : "integer" },
-                "mntentref"     : { ' . $GLOBALS['OMV_JSONSCHEMA_UUID_NONE'] . ' },
-                "path"          : { "type" : "string", "optional" : true }
-            }
-        }');
+        $this->validateMethodParams(
+            $params,
+            '{
+                "type"       : "object",
+                "properties" : {
+                    "enable"    : { "type" : "boolean" },
+                    "showtab"       : { "type" : "boolean" },
+                    "newinstance"   : { "type" : "boolean" },
+                    "newinstenable" : { "type" : "boolean" },
+                    "ppass"         : { "type" : "boolean" },
+                    "ssl"           : { "type" : "boolean" },
+                    "branch"        : { "type" : "string" },
+                    "repo"          : { "type" : "string" },
+                    "port"          : { "type" : "integer" },
+                    "mntentref"     : { ' . $GLOBALS['OMV_JSONSCHEMA_UUID_NONE'] . ' },
+                    "path"          : { "type" : "string", "optional" : true }
+                }
+            }'
+        );
 
         $xPath = sprintf("//system/fstab/mntent[uuid='%s']", $params["mntentref"]);
         $deviceDir = $xmlConfig->get($xPath);
@@ -166,12 +171,25 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             );
         }
 
+        // Check if ssl certs are available
+        //if ($params["ssl"] == "1") {
+        //     $cmd = "ls /etc/ssl/private/openmediavault-*.key";
+        //     $this->exec($cmd, $output);
+        //     if ($output[0] == "ls: cannot access /etc/ssl/private/openmediavault-*.key: No such file or directory") {
+        //         throw new OMVException(
+        //             OMVErrorMsg::E_EXEC_MISC,
+        //             substr($output, 0, 5) . "No Certs were found, can not enable SSL"
+        //         );
+        //     }
+        //}
+
         $object = array(
             "enable"        => array_boolval($params, "enable"),
             "showtab"       => array_boolval($params, "showtab"),
             "newinstance"   => array_boolval($params, "newinstance"),
             "newinstenable" => array_boolval($params, "newinstenable"),
-            "ssl" => array_boolval($params, "ssl"),
+            "ppass"         => array_boolval($params, "ppass"),
+            "ssl"           => array_boolval($params, "ssl"),
             "branch"        => $params['branch'],
             "repo"          => $params["repo"],
             "port"          => $params["port"],

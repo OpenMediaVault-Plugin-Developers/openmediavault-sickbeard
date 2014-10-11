@@ -28,6 +28,7 @@ case "$1" in
             object="<enable>0</enable>"
             object="${object}<showtab>0</showtab>"
             object="${object}<ssl>0</ssl>"
+            object="${object}<ppass>0</ppass>"			
             object="${object}<branch>Please choose a branch</branch>"
             object="${object}<repo>Please choose a repository</repo>"
             object="${object}<forks></forks>"

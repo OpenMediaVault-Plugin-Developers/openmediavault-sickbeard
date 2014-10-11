@@ -7,8 +7,10 @@ set -e
 
 repo="$(omv_config_get "//services/sickbeard/repo")"
 branch="$(omv_config_get "//services/sickbeard/branch")"
-#newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
-#newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
+newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
+newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
+ppass="$(omv_config_get "//services/sickbeard/ppass")"
+ssl="$(omv_config_get "//services/sickbeard/ssl")"
 
 RUN_AS="sickbeard"
 APP_PATH="/opt/sickbeard"
@@ -65,7 +67,7 @@ else
    switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
 fi
 
-if [ "$(omv_config_get "//services/sickbeard/newinstance")" = "1" ]; then
+if [ "$newinstance" = "1" ]; then
     if  [ ! -f /etc/init.d/sickbeard2 ]; then
         sudo -u $RUN_AS mkdir $DATA_DIR2
         cat <<EOF > /etc/init.d/sickbeard2
@@ -187,7 +189,7 @@ EOF
         chmod +x /etc/init.d/sickbeard2
         insserv -d sickbeard2
     fi
-    if [ "$(omv_config_get "//services/sickbeard/newinstenable")" = "1" ]; then
+    if [ "$newinstenable" = "1" ]; then
         invoke-rc.d --quiet sickbeard2 start &>/dev/null
     else
         invoke-rc.d --quiet sickbeard2 stop &>/dev/null
@@ -217,7 +219,7 @@ else
     fi
 fi
 
-if [ "$(omv_config_get "//services/sickbeard/ssl")" = "1" ]; then
+if [ "$ssl" = "1" ]; then
     if [ ! -f "/home/sickbeard/Certificate.crt" ]; then
         CERTIFICATE_DIR=/home/sickbeard
         # Create the certificate files.
@@ -240,19 +242,50 @@ if [ "$(omv_config_get "//services/sickbeard/ssl")" = "1" ]; then
                   chown sickbeard:users ${keyfile}
           done
         #Enable
-        sed -i 's/^enable_https.*/enable_https = 1/' /home/sickbeard/.sickbeard/config.ini
-        sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' /home/sickbeard/.sickbeard/config.ini
-        sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG
+        sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG
+        sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG
     fi
 else
     if [ -f "/home/sickbeard/Certificate.crt" ]; then
         #Disable
-        sed -i 's/^enable_https.*/enable_https = 0/' /home/sickbeard/.sickbeard/config.ini
-        sed -i 's/^https_cert.*/https_cert = server.crt/' /home/sickbeard/.sickbeard/config.ini
-        sed -i 's/^https_key.*/https_key = server.key/' /home/sickbeard/.sickbeard/config.ini
+        sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG
+        sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG
+        sed -i 's/^https_key.*/https_key = server.key/' $CONFIG
         rm /home/sickbeard/Certificate.crt
         rm /home/sickbeard/Private.key
     fi
+fi
+
+
+if [ "$ppass" = "1" ]; then
+    cat << EOF > /etc/nginx/openmediavault-webgui.d/sb.conf
+location /sickbeard {
+        proxy_pass        http://localhost:8081/sickbeard;
+        proxy_set_header  Host localhost:8081;
+        proxy_redirect    default;
+}
+EOF
+    sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $CONFIG
+
+    if [ "$newinstance" = "1" ]; then
+        cat << EOF > /etc/nginx/openmediavault-webgui.d/sb.conf
+location /sickbeard2 {
+        proxy_pass        http://localhost:8082/sickbeard2;
+        proxy_set_header  Host localhost:8082;
+        proxy_redirect    default;
+}
+EOF
+        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
+    fi
+    invoke-rc.d nginx reload
+else
+    rm /etc/nginx/openmediavault-webgui.d/sb.conf > /dev/null 2>&1
+    sed -i 's/^web_root.*/web_root = ""/' $CONFIG
+    if [ "$newinstance" = "1" ]; then
+        sed -i 's/^web_root.*/web_root = ""/' $CONFIG2
+    fi
+    invoke-rc.d nginx reload
 fi
 
 #/home/sickbeard/.sickbeard/config.ini
@@ -268,3 +301,5 @@ fi
 #
 #
 #
+#/usr/share/openmediavault/engined/rpc
+#/var/www/openmediavault/js/omv/module/admin/service/sickbeard
