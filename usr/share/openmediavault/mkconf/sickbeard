@@ -19,6 +19,10 @@ CONFIG="${DATA_DIR}/config.ini"
 DATA_DIR2="/home/sickbeard/.sickbeard2"
 CONFIG2="${DATA_DIR2}/config.ini"
 
+if [ "${newinstenable}" = "1" ]; then
+    /etc/init.d/sickbeard2 stop &>/dev/null
+fi
+
 switch_repo() {
     if [ -d $APP_PATH ]; then
         rm -Rf $APP_PATH
@@ -26,6 +30,9 @@ switch_repo() {
 
     if [ -d $DATA_DIR ]; then
         rm -Rf $DATA_DIR
+    fi
+
+    if [ -d $DATA_DIR2 ]; then
         rm -Rf $DATA_DIR2
     fi
 
@@ -43,7 +50,6 @@ switch_branch() {
 # must be first clone
 if [ ! -d $APP_PATH ]; then
     switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
-    exit 0
 fi
 
 # If /opt/sickbeard exists and is not empty
@@ -55,12 +61,10 @@ if [ -n "$(ls -A $APP_PATH)" ]; then
 
     if [ $repo != $current_repo ]; then
         switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS
-        exit 0
     fi
 
     if [ $branch != $current_branch ]; then
         switch_branch $branch $APP_PATH $RUN_AS
-        exit 0
     fi
 else
    rm -Rf $APP_PATH
@@ -147,7 +151,8 @@ is_running() {
 start() {
   if ! is_running; then
     echo "Starting \$DESC"
-    sudo -u \$RUN_AS \$DAEMON \$DAEMON_OPTS &> /dev/null 2>&1
+    start-stop-daemon -d $APP_PATH -c $RUN_AS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
+    #sudo -u \$RUN_AS \$DAEMON \$DAEMON_OPTS &> /dev/null 2>&1
   else
     echo "\$DESC is running"
   fi
@@ -190,9 +195,9 @@ EOF
         insserv -d sickbeard2
     fi
     if [ "${newinstenable}" = "1" ]; then
-        invoke-rc.d --quiet sickbeard2 start &>/dev/null
+        update-rc.d sickbeard2 enable && /etc/init.d/sickbeard2 start 2>&1 &>/dev/null
     else
-        invoke-rc.d --quiet sickbeard2 stop &>/dev/null
+        /etc/init.d/sickbeard2 stop && update-rc.d sickbeard2 disable &>/dev/null
         if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
             PID=$(cat /var/run/sickbeard/sickbeard2.pid);
             kill -0 $PID 2>/dev/null;
@@ -204,7 +209,7 @@ EOF
     fi
 else
     if  [ -f "/etc/init.d/sickbeard2" ]; then
-        invoke-rc.d --quiet sickbeard2 stop &>/dev/null
+        /etc/init.d/sickbeard2 stop && update-rc.d sickbeard2 disable &>/dev/null
         if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
             PID=$(cat /var/run/sickbeard/sickbeard2.pid);
             kill -0 $PID 2>/dev/null;
@@ -242,16 +247,20 @@ if [ "${ssl}" = "1" ]; then
                   chown sickbeard:users ${keyfile}
           done
         #Enable
-        sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG
-        sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG
-        sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG
+        if [ -f "$CONFIG" ]; then
+            sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG
+            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG
+            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG
+        fi
     fi
 else
     if [ -f "/home/sickbeard/Certificate.crt" ]; then
         #Disable
-        sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG
-        sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG
-        sed -i 's/^https_key.*/https_key = server.key/' $CONFIG
+        if [ -f "$CONFIG" ]; then
+            sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG
+            sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG
+            sed -i 's/^https_key.*/https_key = server.key/' $CONFIG
+        fi
         rm -Rf /home/sickbeard/Certificate.crt > /dev/null 2>&1
         rm -Rf /home/sickbeard/Private.key > /dev/null 2>&1
     fi
@@ -266,7 +275,9 @@ location /sickbeard {
 }
 
 EOF
-    sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $CONFIG
+    if [ -f "$CONFIG" ]; then
+        sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $CONFIG
+    fi
 
     if [ "${newinstance}" = "1" ]; then
         cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
@@ -277,14 +288,19 @@ location /sickbeard2 {
 }
 
 EOF
-        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
+        if [ -f "$CONFIG" ]; then
+            sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
+        fi
     fi
     nginx -s reload
 else
     rm -Rf /etc/nginx/openmediavault-webgui.d/sb.conf > /dev/null 2>&1
-    sed -i 's/^web_root.*/web_root = ""/' $CONFIG
-    if [ "${newinstance}" = "1" ]; then
+    if [ -f "$CONFIG" ]; then
+        sed -i 's/^web_root.*/web_root = ""/' $CONFIG
+    fi
+    if [ "${newinstance}" = "1" ] && [ -f "$CONFIG2" ]; then
         sed -i 's/^web_root.*/web_root = ""/' $CONFIG2
     fi
     nginx -s reload
 fi
+exit

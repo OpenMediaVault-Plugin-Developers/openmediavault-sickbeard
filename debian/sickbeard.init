@@ -71,7 +71,8 @@ is_running() {
 start() {
   if ! is_running; then
     echo "Starting $DESC"
-    sudo -u $RUN_AS $DAEMON $DAEMON_OPTS &> /dev/null 2>&1
+    start-stop-daemon -d $APP_PATH -c $RUN_AS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
+    #sudo -u $RUN_AS $DAEMON $DAEMON_OPTS &> /dev/null 2>&1
   else
     echo "$DESC is running"
   fi
