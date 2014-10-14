@@ -38,7 +38,7 @@ switch_repo() {
 
     cd /
     sudo -u $RUN_AS git clone $repo -b $branch $APP_PATH
-	sudo -u $RUN_AS mkdir -p $DATA_DIR2
+    sudo -u $RUN_AS mkdir -p $DATA_DIR
 
     if [ ! -f $CONFIG ]; then
         echo '[General]
@@ -87,11 +87,9 @@ else
 fi
 
 if [ "${newinstance}" = "1" ]; then
-    if  [ ! -f /etc/init.d/sickbeard2 ]; then
-        sudo -u $RUN_AS mkdir -p $DATA_DIR2
-
-        if [ ! -f $CONFIG2 ]; then
-            echo '[General]
+    if [ ! -f "$CONFIG2" ]; then
+        sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
+        echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8082
@@ -100,9 +98,10 @@ enable_https = 0
 https_cert = server.crt
 https_key = server.key
 web_root = ""' > $CONFIG2
-    chown $RUN_AS $CONFIG2
-    chmod 775 $CONFIG2
-        fi
+        chown $RUN_AS $CONFIG2
+        chmod 775 $CONFIG2
+    fi
+    if  [ ! -f /etc/init.d/sickbeard2 ]; then
         cat <<EOF > /etc/init.d/sickbeard2
 #! /bin/sh
 
