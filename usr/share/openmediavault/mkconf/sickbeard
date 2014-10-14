@@ -45,6 +45,7 @@ switch_repo() {
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8081
+web_port = 8081
 web_host = 0.0.0.0
 enable_https = 0
 https_cert = server.crt
@@ -93,6 +94,7 @@ if [ "${newinstance}" = "1" ]; then
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8082
+web_port = 8082
 web_host = 0.0.0.0
 enable_https = 0
 https_cert = server.crt
@@ -205,22 +207,6 @@ EOF
         chmod +x /etc/init.d/sickbeard2
         insserv -d sickbeard2
     fi
-
-    if [ "${newinstenable}" = "1" ]; then
-        update-rc.d sickbeard2 enable > /dev/null 2>&1
-        /etc/init.d/sickbeard2 start > /dev/null 2>&1
-    else
-        update-rc.d sickbeard2 disable > /dev/null 2>&1
-        if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
-            PID=$(cat /var/run/sickbeard/sickbeard2.pid);
-            kill -0 $PID 2>/dev/null;
-
-            if [ $? -eq 0 ]; then
-                kill -9 $PID;
-                rm -Rf /var/run/sickbeard/sickbeard2.pid > /dev/null 2>&1
-            fi
-        fi
-    fi
 else
     if  [ -f "/etc/init.d/sickbeard2" ]; then
         update-rc.d sickbeard2 disable > /dev/null 2>&1
@@ -317,5 +303,20 @@ else
         sed -i 's/^web_root.*/web_root = ""/' $CONFIG2
     fi
     nginx -s reload
+fi
+if [ "${newinstenable}" = "1" ]; then
+    update-rc.d sickbeard2 enable > /dev/null 2>&1
+    /etc/init.d/sickbeard2 start > /dev/null 2>&1
+else
+    update-rc.d sickbeard2 disable > /dev/null 2>&1
+    if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
+        PID=$(cat /var/run/sickbeard/sickbeard2.pid);
+        kill -0 $PID 2>/dev/null;
+
+        if [ $? -eq 0 ]; then
+            kill -9 $PID;
+            rm -Rf /var/run/sickbeard/sickbeard2.pid > /dev/null 2>&1
+        fi
+    fi
 fi
 exit

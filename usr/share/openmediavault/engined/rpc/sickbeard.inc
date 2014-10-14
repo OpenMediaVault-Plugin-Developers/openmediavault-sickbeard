@@ -186,8 +186,15 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "You have SSL enabled for the main UI, Do NOT enable it here as well."
                 );
             }
+            $ySsl = $xmlConfig->get("//system/certificates/sslcertificate/uuid");
+            if ($ySsl == "") {
+                throw new OMVException(
+                    OMVErrorMsg::E_EXEC_MISC,
+                    "You have not generated any SSL certificates."
+                );
+            }
         }
-        //Checks finished, still need a way of checking if a cert has been generated.
+        //Checks finished.
 
         $object = array(
             "enable"        => array_boolval($params, "enable"),
