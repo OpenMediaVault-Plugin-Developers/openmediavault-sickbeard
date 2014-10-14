@@ -37,28 +37,12 @@ if [ ! -d $PID_PATH ]; then
     chown $RUN_AS $PID_PATH
 fi
 
-# Create DATA_DIR directory if not exist and ensure the Sickbeard user can write to it
-if [ ! -d $DATA_DIR ]; then
-    mkdir -p $DATA_DIR
-    chown $RUN_AS $DATA_DIR
-fi
-
 if [ -e $PID_FILE ]; then
     PID=`cat $PID_FILE`
     if ! kill -0 $PID > /dev/null 2>&1; then
         echo "Removing stale $PID_FILE"
         rm $PID_FILE
     fi
-fi
-
-if [ ! -f $DATA_DIR/config.ini ]; then
-    echo '[General]
-launch_browser = 0
-git_path = "/usr/bin/git"
-port = 8081' > $DATA_DIR/config.ini
-    chown $RUN_AS $PID_PATH
-    chown $RUN_AS $DATA_DIR/config.ini
-    chmod 775 $DATA_DIR/config.ini
 fi
 
 is_running() {
