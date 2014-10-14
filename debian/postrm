@@ -25,6 +25,11 @@ case "$1" in
             fi
         fi
 
+        if [ -f "/etc/init.d/sickbeard2" ]; then
+            update-rc.d sickbeard2 disable;
+            rm -Rf /etc/init.d/sickbeard2
+        fi
+
         rm -Rf /var/run/sickbeard & >/dev/null
         rm -Rf /opt/sickbeard & >/dev/null
 
