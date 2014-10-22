@@ -308,7 +308,10 @@ if [ "${newinstenable}" = "1" ]; then
     update-rc.d sickbeard2 enable > /dev/null 2>&1
     /etc/init.d/sickbeard2 start > /dev/null 2>&1
 else
-    update-rc.d sickbeard2 disable > /dev/null 2>&1
+    if [ -f "/etc/init.d/sickbeard2" ]; then
+        update-rc.d sickbeard2 disable > /dev/null 2>&1
+    fi
+
     if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
         PID=$(cat /var/run/sickbeard/sickbeard2.pid);
         kill -0 $PID 2>/dev/null;
