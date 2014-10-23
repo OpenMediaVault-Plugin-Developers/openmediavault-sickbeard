@@ -31,6 +31,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     private $sickbeardSettingsDir = "/home/sickbeard/.sickbeard/";
     private $sickbeardSettingsFile = "/home/sickbeard/.sickbeard/config.ini";
 
+    private $sickbeard2SettingsDir = "/home/sickbeard/.sickbeard2/";
+    private $sickbeard2SettingsFile = "/home/sickbeard/.sickbeard2/config.ini";
+
     private function getPluginName()
     {
         return strtolower($this->getName());
@@ -419,8 +422,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
     {
         global $xmlConfig;
 
-        // Sickbeard needs to have run once to generate its
-        // settings. Check if this is true
+        // Sickbeard needs to have run once to generate its settings. Check if this is true
         if (!file_exists($this->sickbeardSettingsFile)) {
             throw new OMVException(
                 OMVErrorMsg::E_EXEC_MISC,
@@ -456,11 +458,19 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             $xPath = sprintf("%s/path", $this->getXPath());
             $backupPath = $xmlConfig->get($xPath);
 
-            $cmd = sprintf(
-                "tar -zcvPf %s %s 2>&1",
-                $backupPath,
-                $this->sickbeardSettingsDir
-            );
+            if (file_exists($this->sickbeard2SettingsFile)) {
+                $cmd = sprintf(
+                    "tar -zcvPf %s %s 2>&1",
+                    $backupPath,
+                    $this->sickbeardSettingsDir . " " . $this->sickbeard2SettingsDir
+                );
+            }else{
+                $cmd = sprintf(
+                    "tar -zcvPf %s %s 2>&1",
+                    $backupPath,
+                    $this->sickbeardSettingsDir
+                );
+            }
 
             $this->exec($cmd, $output, $bgOutputFilename);
             $this->finalizeBgProcStatus($bgStatusFilename, $output);
@@ -506,6 +516,14 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             // Delete current settings folder
             rmdir($this->sickbeardSettingsDir);
 
+            // Delete current settings2 folder. Need to find a way of checking the archive to be sure settings2 is there
+            if (file_exists($this->sickbeard2SettingsFile)) {
+                rmdir($this->sickbeard2SettingsDir);
+                $cmd = "/etc/init.d/sickbeard2 stop";
+                $this->exec($cmd);
+                $run2 = $xmlConfig->get("//services/sickbeard/newinstenable");
+            }
+
             // Get the Sickbeard module
             $moduleMgr = &OMVModuleMgr::getInstance();
             $sickbeardModule = $moduleMgr->getModule($this->getName());
@@ -525,10 +543,18 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 $this->exec($cmd, $output, $bgOutputFilename);
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
                 $sickbeardModule->startService();
+                if ($run2 == "1") {
+                    $cmd = "/etc/init.d/sickbeard2 start";
+                    $this->exec($cmd);
+                }
                 exit(0);
             } catch (Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
                 $sickbeardModule->startService();
+                if ($run2 == "1") {
+                    $cmd = "/etc/init.d/sickbeard2 start";
+                    $this->exec($cmd);
+                }
                 exit(1);
             }
         } else {
