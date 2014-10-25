@@ -7,6 +7,8 @@ set -e
 
 repo="$(omv_config_get "//services/sickbeard/repo")"
 branch="$(omv_config_get "//services/sickbeard/branch")"
+repo2="$(omv_config_get "//services/sickbeard/repo2")"
+branch2="$(omv_config_get "//services/sickbeard/branch2")"
 newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
 newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
 ppass="$(omv_config_get "//services/sickbeard/ppass")"
@@ -14,9 +16,10 @@ ssl="$(omv_config_get "//services/sickbeard/ssl")"
 
 RUN_AS="sickbeard"
 APP_PATH="/opt/sickbeard"
+APP_PATH2="/opt/sickbeard2"
 DATA_DIR="/home/sickbeard/.sickbeard"
-CONFIG="${DATA_DIR}/config.ini"
 DATA_DIR2="/home/sickbeard/.sickbeard2"
+CONFIG="${DATA_DIR}/config.ini"
 CONFIG2="${DATA_DIR2}/config.ini"
 
 if [ -f "/etc/init.d/sickbeard2" ]; then
@@ -30,10 +33,6 @@ switch_repo() {
 
     if [ -d $DATA_DIR ]; then
         rm -Rf $DATA_DIR
-    fi
-
-    if [ -d $DATA_DIR2 ]; then
-        rm -Rf $DATA_DIR2
     fi
 
     cd /
@@ -88,9 +87,41 @@ else
 fi
 
 if [ "${newinstance}" = "1" ]; then
-    if [ ! -f "$CONFIG2" ]; then
-        sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
-        echo '[General]
+    if [ "${newinstenable}" = "1" ]; then
+        if [ ! -d "$APP_PATH2" ]; then
+                cd /
+            sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
+            sudo -u $RUN_AS mkdir -p $DATA_DIR2
+        else
+            cd $APP_PATH2
+            current_repo2="$(git config --get remote.origin.url)"
+
+            if [ $repo2 != $current_repo2 ]; then
+                if [ -d "$APP_PATH2" ]; then
+                    rm -Rf $APP_PATH2
+                fi
+
+                if [ -d "$DATA_DIR2" ]; then
+                    rm -Rf $DATA_DIR2
+                fi
+                cd /
+                sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
+                sudo -u $RUN_AS mkdir -p $DATA_DIR2
+            fi
+
+            cd $APP_PATH2
+            current_branch2="$(git rev-parse --abbrev-ref HEAD)"
+
+            if [ $branch2 != $current_branch2 ]; then
+                cd $APP_PATH2
+                sudo -u $RUN_AS git reset --hard
+                sudo -u $RUN_AS git checkout $branch2
+            fi
+        fi
+
+        if [ ! -f "$CONFIG2" ]; then
+            sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
+            echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8082
@@ -102,9 +133,10 @@ https_key = server.key
 web_root = ""' > $CONFIG2
         chown $RUN_AS $CONFIG2
         chmod 775 $CONFIG2
-    fi
-    if  [ ! -f /etc/init.d/sickbeard2 ]; then
-        cat <<EOF > /etc/init.d/sickbeard2
+        fi
+
+        if  [ ! -f /etc/init.d/sickbeard2 ]; then
+            cat <<EOF > /etc/init.d/sickbeard2
 #! /bin/sh
 
 ### BEGIN INIT INFO
@@ -124,7 +156,7 @@ set -e
 ############### BEGIN EDIT ME ################
 RUN_AS=sickbeard
 RUN_GRP=users
-APP_PATH=/opt/sickbeard
+APP_PATH=/opt/sickbeard2
 DAEMON=/usr/bin/python
 PID_FILE=/var/run/sickbeard/sickbeard2.pid
 PID_PATH=\$(dirname \$PID_FILE)
@@ -204,8 +236,9 @@ case "\$1" in
     echo "Usage: \$0 {start|stop|restart|uninstall}"
 esac
 EOF
-        chmod +x /etc/init.d/sickbeard2
-        insserv -d sickbeard2
+            chmod +x /etc/init.d/sickbeard2
+            insserv -d sickbeard2
+        fi
     fi
 else
     if  [ -f "/etc/init.d/sickbeard2" ]; then
@@ -222,6 +255,7 @@ else
 
         rm -Rf $DATA_DIR2
         rm -Rf /etc/init.d/sickbeard2
+        rm -Rf $APP_PATH2
     fi
 fi
 
@@ -304,7 +338,8 @@ else
     fi
     nginx -s reload
 fi
-if [ "${newinstenable}" = "1" ]; then
+
+if [ "${newinstance}" = "1" ] && [ "${newinstenable}" = "1" ]; then
     update-rc.d sickbeard2 enable > /dev/null 2>&1
     /etc/init.d/sickbeard2 start > /dev/null 2>&1
 else

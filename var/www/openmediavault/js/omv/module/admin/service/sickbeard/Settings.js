@@ -61,6 +61,16 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 "port",
             ],
             properties : "!show"
+        },{
+            name       : [
+                "newinstenable",
+                "repo2",
+                "branch2",
+            ],
+            conditions : [
+                { name  : "newinstance", value : false }
+            ],
+            properties : "!show"
         }]
     }],
 
@@ -269,6 +279,71 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 fieldLabel : _("Run"),
                 boxLabel   : _("Will run the second instance of SickBeard. Use to start/stop the second service."),
                 checked    : false
+            },{
+                xtype      : "combo",
+                name       : "repo2",
+                fieldLabel : _("Repository"),
+                allowBlank : false,
+                editable   : false,
+                queryMode  : "local",
+                store      : Ext.create("OMV.data.Store", {
+                    autoLoad : true,
+                    model    : OMV.data.Model.createImplicit({
+                        idProperty : "name",
+                        fields     : [{
+                            name : "uuid",
+                            type : "string"
+                        },{
+                            name : "name",
+                            type : "string"
+                        },{
+                            name : "fork",
+                            type : "string"
+                        },{
+                            name : "branches",
+                            type : "array"
+                        }],
+                        proxy : {
+                            type    : "rpc",
+                            rpcData : {
+                                service : "Sickbeard",
+                                method  : "enumerateRepos"
+                            },
+                            appendSortParams : false
+                        }
+                    })
+                }),
+                displayField  : "fork",
+                valueField    : "fork",
+                triggerAction : "all",
+                selectOnFocus : true,
+                plugins       : [{
+                    ptype : "fieldinfo",
+                    text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
+                }],
+                listeners : {
+                    select : function(combo, records) {
+                        var record = records.pop();
+                        me.updateBranchCombo2(record.get("branches"));
+                    },
+                    change : function(combo, value) {
+                        var record = combo.store.findRecord("fork", value);
+                        me.updateBranchCombo2(record.get("branches"));
+                    }
+                }
+            },{
+                xtype         : "combo",
+                name          : "branch2",
+                fieldLabel    : _("Branch"),
+                queryMode     : "local",
+                store         : [],
+                allowBlank    : false,
+                editable      : false,
+                triggerAction : "all",
+                plugins       : [{
+                    ptype : "fieldinfo",
+                    text  : _("The branch you want to use. choose master if you don't know whats involed.")
+                }]
             }]
         }];
     },
@@ -314,6 +389,18 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
         for (var i = 0; i < values.length; i++) {
             // TODO: Look over use of field1
             branchCombo.store.add({ field1: values[i] });
+        }
+    },
+
+    updateBranchCombo2 : function(values) {
+        var me = this;
+        var branchCombo2 = me.findField("branch2");
+
+        branchCombo2.store.removeAll();
+
+        for (var i = 0; i < values.length; i++) {
+            // TODO: Look over use of field1
+            branchCombo2.store.add({ field1: values[i] });
         }
     }
 });
