@@ -287,6 +287,11 @@ if [ "${ssl}" = "1" ]; then
             sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG
             sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG
         fi
+        if [ -f "$CONFIG2" ]; then
+            sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG2
+            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG2
+            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG2
+        fi
     fi
 else
     if [ -f "/home/sickbeard/Certificate.crt" ]; then
@@ -295,6 +300,11 @@ else
             sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG
             sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG
             sed -i 's/^https_key.*/https_key = server.key/' $CONFIG
+        fi
+        if [ -f "$CONFIG2" ]; then
+            sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG2
+            sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG2
+            sed -i 's/^https_key.*/https_key = server.key/' $CONFIG2
         fi
         rm -Rf /home/sickbeard/Certificate.crt > /dev/null 2>&1
         rm -Rf /home/sickbeard/Private.key > /dev/null 2>&1
@@ -313,7 +323,9 @@ EOF
     if [ -f "$CONFIG" ]; then
         sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $CONFIG
     fi
-
+    if [ -f "$CONFIG2" ]; then
+        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
+    fi
     if [ "${newinstance}" = "1" ]; then
         cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
 location /sickbeard2 {
@@ -323,9 +335,6 @@ location /sickbeard2 {
 }
 
 EOF
-        if [ -f "$CONFIG" ]; then
-            sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
-        fi
     fi
     nginx -s reload
 else
@@ -333,7 +342,7 @@ else
     if [ -f "$CONFIG" ]; then
         sed -i 's/^web_root.*/web_root = ""/' $CONFIG
     fi
-    if [ "${newinstance}" = "1" ] && [ -f "$CONFIG2" ]; then
+    if [ -f "$CONFIG2" ]; then
         sed -i 's/^web_root.*/web_root = ""/' $CONFIG2
     fi
     nginx -s reload
