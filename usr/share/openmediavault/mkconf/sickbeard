@@ -87,41 +87,9 @@ else
 fi
 
 if [ "${newinstance}" = "1" ]; then
-    if [ "${newinstenable}" = "1" ]; then
-        if [ ! -d "$APP_PATH2" ]; then
-                cd /
-            sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
-            sudo -u $RUN_AS mkdir -p $DATA_DIR2
-        else
-            cd $APP_PATH2
-            current_repo2="$(git config --get remote.origin.url)"
-
-            if [ $repo2 != $current_repo2 ]; then
-                if [ -d "$APP_PATH2" ]; then
-                    rm -Rf $APP_PATH2
-                fi
-
-                if [ -d "$DATA_DIR2" ]; then
-                    rm -Rf $DATA_DIR2
-                fi
-                cd /
-                sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
-                sudo -u $RUN_AS mkdir -p $DATA_DIR2
-            fi
-
-            cd $APP_PATH2
-            current_branch2="$(git rev-parse --abbrev-ref HEAD)"
-
-            if [ $branch2 != $current_branch2 ]; then
-                cd $APP_PATH2
-                sudo -u $RUN_AS git reset --hard
-                sudo -u $RUN_AS git checkout $branch2
-            fi
-        fi
-
-        if [ ! -f "$CONFIG2" ]; then
-            sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
-            echo '[General]
+    if [ ! -f "$CONFIG2" ]; then
+        sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
+        echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8082
@@ -133,10 +101,10 @@ https_key = server.key
 web_root = ""' > $CONFIG2
         chown $RUN_AS $CONFIG2
         chmod 775 $CONFIG2
-        fi
+    fi
 
-        if  [ ! -f /etc/init.d/sickbeard2 ]; then
-            cat <<EOF > /etc/init.d/sickbeard2
+    if  [ ! -f /etc/init.d/sickbeard2 ]; then
+        cat <<EOF > /etc/init.d/sickbeard2
 #! /bin/sh
 
 ### BEGIN INIT INFO
@@ -236,8 +204,39 @@ case "\$1" in
     echo "Usage: \$0 {start|stop|restart|uninstall}"
 esac
 EOF
-            chmod +x /etc/init.d/sickbeard2
-            insserv -d sickbeard2
+        chmod +x /etc/init.d/sickbeard2
+        insserv -d sickbeard2
+    fi
+    if [ "${newinstenable}" = "1" ]; then
+        if [ ! -d "$APP_PATH2" ]; then
+                cd /
+            sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
+            sudo -u $RUN_AS mkdir -p $DATA_DIR2
+        else
+            cd $APP_PATH2
+            current_repo2="$(git config --get remote.origin.url)"
+
+            if [ $repo2 != $current_repo2 ]; then
+                if [ -d "$APP_PATH2" ]; then
+                    rm -Rf $APP_PATH2
+                fi
+
+                if [ -d "$DATA_DIR2" ]; then
+                    rm -Rf $DATA_DIR2
+                fi
+                cd /
+                sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
+                sudo -u $RUN_AS mkdir -p $DATA_DIR2
+            fi
+
+            cd $APP_PATH2
+            current_branch2="$(git rev-parse --abbrev-ref HEAD)"
+
+            if [ $branch2 != $current_branch2 ]; then
+                cd $APP_PATH2
+                sudo -u $RUN_AS git reset --hard
+                sudo -u $RUN_AS git checkout $branch2
+            fi
         fi
     fi
 else
