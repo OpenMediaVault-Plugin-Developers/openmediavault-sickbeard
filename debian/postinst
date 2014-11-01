@@ -28,9 +28,11 @@ case "$1" in
             object="<enable>0</enable>"
             object="${object}<showtab>0</showtab>"
             object="${object}<ssl>0</ssl>"
-            object="${object}<ppass>0</ppass>"			
+            object="${object}<ppass>0</ppass>"
             object="${object}<branch>Please choose a branch</branch>"
             object="${object}<repo>Please choose a repository</repo>"
+            object="${object}<branch2>Please choose a branch</branch2>"
+            object="${object}<repo2>Please choose a repository</repo2>"
             object="${object}<forks></forks>"
             omv_config_add_element "/config/services" "sickbeard" "${object}" true
         fi
