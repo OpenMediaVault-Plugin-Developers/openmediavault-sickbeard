@@ -63,27 +63,31 @@ switch_branch() {
 
 # If /opt/sickbeard does not exists
 # must be first clone
-if [ ! -d $APP_PATH ]; then
-    switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+if [ ! -e $APP_PATH ]; then
+    if [ "$repo" != "Please choose a repository" && "$branch" != "Please choose a branch" ]; then
+        switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+    fi
 fi
 
 # If /opt/sickbeard exists and is not empty
 # fetch current repo and branch
-if [ -n "$(ls -A $APP_PATH)" ]; then
-    cd $APP_PATH
-    current_repo="$(git config --get remote.origin.url)"
-    current_branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ -d $APP_PATH ]; then
+    if [ -n "$(ls -A $APP_PATH)" ]; then
+        cd $APP_PATH
+        current_repo="$(git config --get remote.origin.url)"
+        current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
-    if [ $repo != $current_repo ]; then
+        if [ $repo != $current_repo ]; then
+            switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+        fi
+
+        if [ $branch != $current_branch ]; then
+            switch_branch $branch $APP_PATH $RUN_AS
+        fi
+    else
+        rm -Rf $APP_PATH
         switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
     fi
-
-    if [ $branch != $current_branch ]; then
-        switch_branch $branch $APP_PATH $RUN_AS
-    fi
-else
-   rm -Rf $APP_PATH
-   switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
 fi
 
 if [ "${newinstance}" = "1" ]; then
@@ -366,3 +370,4 @@ else
     fi
 fi
 exit
+
