@@ -64,7 +64,7 @@ switch_branch() {
 # If /opt/sickbeard does not exists
 # must be first clone
 if [ ! -e $APP_PATH ]; then
-    if [ "$repo" != "Please choose a repository" && "$branch" != "Please choose a branch" ]; then
+    if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
         switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
     fi
 fi
