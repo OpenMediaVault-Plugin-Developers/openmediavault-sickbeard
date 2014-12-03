@@ -66,6 +66,7 @@ stop() {
   if is_running; then
     echo "Stopping $DESC"
     start-stop-daemon --stop --pidfile $PID_FILE --retry 15
+    rm $PID_FILE
   fi
 }
 
