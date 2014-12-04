@@ -101,7 +101,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
 
         if ($object["branch"] == "Please choose a branch") {
             throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                OMVErrorMsg::E_MISC_FAILURE,
                 "Please select a repository and branch"
             );
             return;
@@ -109,7 +109,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
 
         if ($object["repo"] == "Please choose a repository" ) {
             throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                OMVErrorMsg::E_MISC_FAILURE,
                 "Please select a repository and branch"
             );
             return;
