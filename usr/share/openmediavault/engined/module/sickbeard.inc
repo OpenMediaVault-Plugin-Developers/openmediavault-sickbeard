@@ -95,6 +95,10 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             );
         }
 
+        if (!boolval($object["enable"])) {
+            return;
+        }
+
         if ($object["branch"] == "Please choose a branch") {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
@@ -108,10 +112,6 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
                 "Please select a repository and branch"
             );
-            return;
-        }
-
-        if (!boolval($object["enable"])) {
             return;
         }
 
