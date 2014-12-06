@@ -105,6 +105,9 @@ https_key = server.key
 web_root = ""' > $CONFIG2
         chown $RUN_AS:users $CONFIG2
         chmod 775 $CONFIG2
+    else
+        sed -i 's/^port = .*/port = 8082/' $CONFIG2
+        sed -i 's/^web_port.*/web_port = 8082/' $CONFIG2
     fi
 
     if  [ ! -f /etc/init.d/sickbeard2 ]; then
