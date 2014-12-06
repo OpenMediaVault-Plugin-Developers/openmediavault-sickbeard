@@ -50,7 +50,7 @@ enable_https = 0
 https_cert = server.crt
 https_key = server.key
 web_root = ""' > $CONFIG
-    chown $RUN_AS $CONFIG
+    chown $RUN_AS:users $CONFIG
     chmod 775 $CONFIG
     fi
 }
@@ -65,7 +65,7 @@ switch_branch() {
 # must be first clone
 if [ ! -e $APP_PATH ]; then
     if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-        switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
     fi
 fi
 
@@ -78,7 +78,7 @@ if [ -d $APP_PATH ]; then
         current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
         if [ $repo != $current_repo ]; then
-            switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+            switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
         fi
 
         if [ $branch != $current_branch ]; then
@@ -86,7 +86,7 @@ if [ -d $APP_PATH ]; then
         fi
     else
         rm -Rf $APP_PATH
-        switch_repo $repo $branch $APP_PATH $DATA_DIR $DATA_DIR2 $RUN_AS $CONFIG
+        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
     fi
 fi
 
@@ -103,7 +103,7 @@ enable_https = 0
 https_cert = server.crt
 https_key = server.key
 web_root = ""' > $CONFIG2
-        chown $RUN_AS $CONFIG2
+        chown $RUN_AS:users $CONFIG2
         chmod 775 $CONFIG2
     fi
 
@@ -275,14 +275,14 @@ if [ "${ssl}" = "1" ]; then
                         -v certificate \
                         ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${crtfile}
                   chmod 0640 ${crtfile}
-                  chown sickbeard:users ${crtfile}
+                  chown $RUN_AS:users ${crtfile}
 
                   keyfile="${CERTIFICATE_DIR}/Private.key"
                   xmlstarlet sel -t -m "//system/certificates/sslcertificate[uuid='${uuid}']" \
                         -v privatekey \
                         ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${keyfile}
                   chmod 0600 ${keyfile}
-                  chown sickbeard:users ${keyfile}
+                  chown $RUN_AS:users ${keyfile}
           done
         #Enable
         if [ -f "$CONFIG" ]; then
