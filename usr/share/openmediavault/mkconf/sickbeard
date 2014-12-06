@@ -91,25 +91,6 @@ if [ -d $APP_PATH ]; then
 fi
 
 if [ "${newinstance}" = "1" ]; then
-    if [ ! -f "$CONFIG2" ]; then
-        sudo -u $RUN_AS mkdir -p $DATA_DIR2 > /dev/null 2>&1
-        echo '[General]
-launch_browser = 0
-git_path = "/usr/bin/git"
-port = 8082
-web_port = 8082
-web_host = 0.0.0.0
-enable_https = 0
-https_cert = server.crt
-https_key = server.key
-web_root = ""' > $CONFIG2
-        chown $RUN_AS:users $CONFIG2
-        chmod 775 $CONFIG2
-    else
-        sed -i 's/^port = .*/port = 8082/' $CONFIG2
-        sed -i 's/^web_port.*/web_port = 8082/' $CONFIG2
-    fi
-
     if  [ ! -f /etc/init.d/sickbeard2 ]; then
         cat <<EOF > /etc/init.d/sickbeard2
 #! /bin/sh
@@ -244,6 +225,23 @@ EOF
                 sudo -u $RUN_AS git reset --hard
                 sudo -u $RUN_AS git checkout $branch2
             fi
+        fi
+        if [ ! -f "$CONFIG2" ]; then
+            echo '[General]
+launch_browser = 0
+git_path = "/usr/bin/git"
+port = 8082
+web_port = 8082
+web_host = 0.0.0.0
+enable_https = 0
+https_cert = server.crt
+https_key = server.key
+web_root = ""' > $CONFIG2
+            chown $RUN_AS:users $CONFIG2
+            chmod 775 $CONFIG2
+        else
+            sed -i 's/^port = 8081/port = 8082/' $CONFIG2
+            sed -i 's/^web_port = 8081/web_port = 8082/' $CONFIG2
         fi
     fi
 else
