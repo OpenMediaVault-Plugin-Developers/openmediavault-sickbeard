@@ -8,7 +8,7 @@ set -e
 case "$1" in
     purge)
         if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
-            PID=$(cat /var/run/sickbeard/sickbeard.pid);
+            PID=`cat /var/run/sickbeard/sickbeard.pid`
             kill -0 $PID 2>/dev/null;
 
             if [ $? -eq 0 ]; then
@@ -17,7 +17,7 @@ case "$1" in
         fi
 
         if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
-            PID=$(cat /var/run/sickbeard/sickbeard2.pid);
+            PID=`cat /var/run/sickbeard/sickbeard2.pid`;
             kill -0 $PID 2>/dev/null;
 
             if [ $? -eq 0 ]; then
@@ -32,6 +32,7 @@ case "$1" in
 
         rm -Rf /var/run/sickbeard & >/dev/null
         rm -Rf /opt/sickbeard & >/dev/null
+        rm -Rf /opt/sickbeard2 & >/dev/null
 
         omv_config_delete "//services/sickbeard"
 
@@ -41,7 +42,13 @@ case "$1" in
             rm -Rf /opt/sickbeard/.gitignore & >/dev/null
         fi
 
-        userdel -r sickbeard
+        if [ -d "/opt/sickbeard2" ]; then
+            rm -Rf /opt/sickbeard2/* & >/dev/null
+            rm -Rf /opt/sickbeard2/.git & >/dev/null
+            rm -Rf /opt/sickbeard2/.gitignore & >/dev/null
+        fi
+
+        userdel -rf sickbeard
 
         if [ ! -d /opt ]; then
             mkdir /opt
