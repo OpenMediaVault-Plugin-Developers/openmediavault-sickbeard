@@ -188,8 +188,16 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 scope   : this,
                 handler : function() {
                     var me = this;
-                    var port = me.getForm().findField("port").getValue();
-                    var link = "http://" + location.hostname + ":" + port + "/home/";
+                    var link = "";
+                    var proxy = me.getForm().findField("ppass").getValue();
+                    
+                    if (proxy == true) {
+                        link = "http://" + location.hostname + "/sickbeard/home/";
+                    } else {
+                        var port = me.getForm().findField("port").getValue();
+                        link = "http://" + location.hostname + ":" + port + "/home/";
+                    }
+                    
                     window.open(link, "_blank");
                 },
                 margin : "0 0 5 0"
