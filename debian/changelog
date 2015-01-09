@@ -1,3 +1,9 @@
+openmediavault-sickbeard (1.0.2) unstable; urgency=low
+
+  * Add second instance
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Fri, 09 Jan 2015 02:19:27 -0500
+
 openmediavault-sickbeard (1.0.1) unstable; urgency=low
 
   * Fix webserver ports
