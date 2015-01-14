@@ -1,3 +1,9 @@
+openmediavault-sickbeard (1.0.3) unstable; urgency=low
+
+  * Fix 400 errors
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Wed, 14 Jan 2015 19:43:27 -0500
+
 openmediavault-sickbeard (1.0.2) unstable; urgency=low
 
   * Add second instance
