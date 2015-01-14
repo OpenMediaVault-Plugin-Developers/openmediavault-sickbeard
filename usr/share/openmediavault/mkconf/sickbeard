@@ -72,6 +72,14 @@ fi
 # If /opt/sickbeard exists and is not empty
 # fetch current repo and branch
 if [ -d $APP_PATH ]; then
+    if [ ! -f $APP_PATH/SickBeard.py ]; then
+	    rm -Rf $APP_PATH  & >/dev/null
+		if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
+            switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
+			exit
+        fi
+	fi
+
     if [ -n "$(ls -A $APP_PATH)" ]; then
         cd $APP_PATH
         current_repo="$(git config --get remote.origin.url)"

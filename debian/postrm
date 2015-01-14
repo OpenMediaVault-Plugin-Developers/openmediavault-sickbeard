@@ -37,6 +37,7 @@ case "$1" in
         omv_config_delete "//services/sickbeard"
 
         if [ -d "/opt/sickbeard" ]; then
+            rm -Rf /opt/sickbeard/autoProcessTV & >/dev/null
             rm -Rf /opt/sickbeard/* & >/dev/null
             rm -Rf /opt/sickbeard/.git & >/dev/null
             rm -Rf /opt/sickbeard/.gitignore & >/dev/null
