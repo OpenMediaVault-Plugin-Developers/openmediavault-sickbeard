@@ -1,9 +1,9 @@
-openmediavault-sickbeard 1.0.4) unstable; urgency=low
+openmediavault-sickbeard (1.0.4) unstable; urgency=low
 
   * Use init scripts provided by sickbeard
   * Make the user sickbeard a system user
 
- -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 13 Jan 2015 21:45:38 +0100
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Thu, 22 Jan 2015 01:20:02 +0000
 
 openmediavault-sickbeard (1.0.3) unstable; urgency=low
 

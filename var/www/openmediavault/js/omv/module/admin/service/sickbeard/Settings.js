@@ -37,7 +37,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
     initComponent: function() {
         this.on("load", function() {
             var checked = this.findField("enable").checked;
-            var showtab = this.findField("show_tab").checked;
+            var showtab = this.findField("showtab").checked;
             var parent = this.up("tabpanel");
 
             if (!parent) {
@@ -315,3 +315,4 @@ OMV.WorkspaceManager.registerPanel({
     position  : 10,
     className : "OMV.module.admin.service.sickbeard.Settings"
 });
+

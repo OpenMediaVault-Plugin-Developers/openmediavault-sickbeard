@@ -260,6 +260,24 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "xmpp"
                 )
             ),
+            array(
+                "uuid" => "21111111-2222-3333-4444-555555555555",
+                "name" => "Main Branch2",
+                "fork" => "https://github.com/midgetspy/Sick-Beard.git",
+                "branches" => array(
+                    "1080i",
+                    "anime",
+                    "custom_torrents",
+                    "development",
+                    "katph",
+                    "master",
+                    "multi_snatch",
+                    "naming_error_info",
+                    "storm",
+                    "windows_binaries",
+                    "xmpp"
+                )
+            )
         );
 
         $repos = array_merge($defaultRepos, $userRepos);

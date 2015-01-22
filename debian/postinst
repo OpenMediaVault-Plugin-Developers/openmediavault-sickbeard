@@ -11,6 +11,7 @@ OMV_SICKBEARD_OLD_DATA_PATH2="/home/sickbeard/.sickbeard2"
 OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
 OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard2"
 OMV_SICKBEARD_USER="sickbeard"
+OMV_SICKBEARD_GROUP="users"
 
 case "$1" in
     configure)
@@ -32,7 +33,7 @@ case "$1" in
         if ! getent passwd sickbeard >/dev/null 2>&1; then
             adduser --quiet \
                     --system \
-                    --group \
+                    --ingroup $OMV_SICKBEARD_GROUP \
                     --no-create-home \
                     --disabled-password \
                     $OMV_SICKBEARD_USER
@@ -47,8 +48,8 @@ case "$1" in
             mv $OMV_SICKBEARD_OLD_DATA_PATH2 $OMV_SICKBEARD_DATA_PATH2
         fi
 
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_USER $OMV_SICKBEARD_APP_PATH
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_USER $OMV_SICKBEARD_DATA_PATH -R
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_APP_PATH
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GGOUP $OMV_SICKBEARD_DATA_PATH -R
 
         # Activate package triggers. These triggers are only set during the
         # package installation.
