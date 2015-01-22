@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 OpenMediaVault Plugin Developers
+ * Copyright (C) 2013-2015 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,24 +20,29 @@
 // require("js/omv/data/Store.js")
 // require("js/omv/data/Model.js")
 // require("js/omv/form/plugin/LinkedFields.js")
+// require("js/omv/module/admin/service/sickbeard/Backup.js")
 
 Ext.define("OMV.module.admin.service.sickbeard.Settings", {
-    extend   : "OMV.workspace.form.Panel",
-    requires : [
+    extend: "OMV.workspace.form.Panel",
+    requires: [
         "OMV.data.Model",
-        "OMV.data.Store"
+        "OMV.data.Store",
+        "OMV.module.admin.service.sickbeard.Backup"
     ],
 
-    initComponent : function () {
-        var me = this;
+    rpcService   : "Sickbeard",
+    rpcGetMethod : "getSettings",
+    rpcSetMethod : "setSettings",
 
-        me.on("load", function () {
-            var checked = me.findField("enable").checked;
-            var showtab = me.findField("showtab").checked;
-            var parent = me.up("tabpanel");
+    initComponent: function() {
+        this.on("load", function() {
+            var checked = this.findField("enable").checked;
+            var showtab = this.findField("show_tab").checked;
+            var parent = this.up("tabpanel");
 
-            if (!parent)
+            if (!parent) {
                 return;
+            }
 
             var managementPanel = parent.down("panel[title=" + _("Web Interface") + "]");
 
@@ -45,38 +50,43 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 checked ? managementPanel.enable() : managementPanel.disable();
                 showtab ? managementPanel.tab.show() : managementPanel.tab.hide();
             }
-        });
+        }, this);
 
-        me.callParent(arguments);
+        this.callParent(arguments);
     },
 
-    rpcService   : "Sickbeard",
-    rpcGetMethod : "getSettings",
-    rpcSetMethod : "setSettings",
+    getButtonItems: function() {
+        var items = this.callParent(arguments);
 
-    plugins      : [{
-        ptype        : "linkedfields",
-        correlations : [{
-            name       : [
-                "port",
-            ],
-            properties : "!show"
-        },{
-            name       : [
-                "newinstenable",
-                "repo2",
-                "branch2",
-            ],
-            conditions : [
-                { name  : "newinstance", value : false }
-            ],
-            properties : "!show"
-        }]
-    }],
+        items.push({
+            id: this.getId() + "-show",
+            xtype: "button",
+            text: _("SB Web Client"),
+            icon: "images/sickbeard.png",
+            iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
+            scope: this,
+            handler: function() {
+                var port = this.getForm().findField("port").getValue();
+                var link = "http://" + location.hostname + ":" + port + "/";
+
+                window.open(link, "_blank");
+            }
+        }, {
+            id: this.getId() + "-backup",
+            xtype: "button",
+            text: _("Backup/restore"),
+            icon: "images/wrench.png",
+            iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
+            scope: this,
+            handler: function() {
+                Ext.create("OMV.module.admin.service.sickbeard.Backup").show();
+            }
+        });
+
+        return items;
+    },
 
     getFormItems : function() {
-        var me = this;
-
         return [{
             xtype    : "fieldset",
             title    : "General settings",
@@ -110,27 +120,24 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 xtype      : "combo",
                 name       : "repo",
                 fieldLabel : _("Repository"),
-                allowBlank : false,
-                editable   : false,
-                queryMode  : "local",
-                store      : Ext.create("OMV.data.Store", {
-                    autoLoad : true,
-                    model    : OMV.data.Model.createImplicit({
-                        idProperty : "name",
-                        fields     : [{
-                            name : "uuid",
-                            type : "string"
-                        },{
-                            name : "name",
-                            type : "string"
-                        },{
-                            name : "fork",
-                            type : "string"
-                        },{
-                            name : "branches",
-                            type : "array"
+                store: Ext.create("OMV.data.Store", {
+                    autoLoad: true,
+                    model: OMV.data.Model.createImplicit({
+                        idProperty: "name",
+                        fields: [{
+                            name: "uuid",
+                            type: "string"
+                        }, {
+                            name: "name",
+                            type: "string"
+                        }, {
+                            name: "fork",
+                            type: "string"
+                        }, {
+                            name: "branches",
+                            type: "array"
                         }],
-                        proxy : {
+                        proxy: {
                             type    : "rpc",
                             rpcData : {
                                 service : "Sickbeard",
@@ -140,36 +147,42 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                         }
                     })
                 }),
-                displayField  : "fork",
-                valueField    : "fork",
-                triggerAction : "all",
-                selectOnFocus : true,
-                plugins       : [{
-                    ptype : "fieldinfo",
-                    text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
-                }],
-                listeners : {
-                    select : function(combo, records) {
-                        var record = records.pop();
-                        me.updateBranchCombo(record.get("branches"));
-                    },
-                    change : function(combo, value) {
+                allowBlank: false,
+                displayField: "fork",
+                editable: false,
+                listeners: {
+                    scope: this,
+                    change: function(combo, value) {
                         var record = combo.store.findRecord("fork", value);
-                        me.updateBranchCombo(record.get("branches"));
+
+                        this.updateBranchCombo(record.get("branches"));
+                    },
+                    select: function(combo, records) {
+                        var record = records.pop();
+
+                        this.updateBranchCombo(record.get("branches"));
                     }
-                }
-            },{
-                xtype         : "combo",
-                name          : "branch",
-                fieldLabel    : _("Branch"),
-                queryMode     : "local",
-                store         : [],
-                allowBlank    : false,
-                editable      : false,
-                triggerAction : "all",
-                plugins       : [{
-                    ptype : "fieldinfo",
-                    text  : _("The branch you want to use. choose master if you don't know whats involed.")
+                },
+                queryMode: "local",
+                selectOnFocus: true,
+                triggerAction: "all",
+                valueField: "fork",
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("The repository you want to use. If changing from a current repository, setting will be wiped.")
+                }]
+            }, {
+                xtype: "combo",
+                name: "branch",
+                fieldLabel: _("Branch"),
+                allowBlank: false,
+                editable: false,
+                queryMode: "local",
+                store: [],
+                triggerAction: "all",
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("The branch you want to use. choose master if you don't know what's involved.")
                 }]
             },{
                 xtype: "numberfield",
@@ -181,96 +194,9 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 allowDecimals: false,
                 allowBlank: false,
                 value: 8081
-            },{
-                xtype   : "button",
-                name    : "opensickbeard",
-                text    : _("Sickbeard Web Interface"),
-                scope   : this,
-                handler : function() {
-                    var me = this;
-                    var link = "";
-                    var proxy = me.getForm().findField("ppass").getValue();
-                    
-                    if (proxy == true) {
-                        link = "http://" + location.hostname + "/sickbeard/home/";
-                    } else {
-                        var port = me.getForm().findField("port").getValue();
-                        link = "http://" + location.hostname + ":" + port + "/home/";
-                    }
-                    
-                    window.open(link, "_blank");
-                },
-                margin : "0 0 5 0"
             }]
                 },{
-                        xtype: "fieldset",
-                        title: _("Backup User Settings"),
-                        fieldDefaults: {
-                                labelSeparator: ""
-                        },
-                        items : [{
-                xtype         : "combo",
-                name          : "mntentref",
-                fieldLabel    : _("Volume"),
-                emptyText     : _("Select a volume ..."),
-                allowBlank    : false,
-                allowNone     : false,
-                editable      : false,
-                triggerAction : "all",
-                displayField  : "description",
-                valueField    : "uuid",
-                store         : Ext.create("OMV.data.Store", {
-                    autoLoad : true,
-                    model    : OMV.data.Model.createImplicit({
-                        idProperty : "uuid",
-                        fields     : [
-                            { name : "uuid", type : "string" },
-                            { name : "devicefile", type : "string" },
-                            { name : "description", type : "string" }
-                        ]
-                    }),
-                    proxy : {
-                        type : "rpc",
-                        rpcData : {
-                            service : "ShareMgmt",
-                            method  : "getCandidates"
-                        },
-                        appendSortParams : false
-                    },
-                    sorters : [{
-                        direction : "ASC",
-                        property  : "devicefile"
-                    }]
-                })
-            },{
-                xtype      : "textfield",
-                name       : "path",
-                fieldLabel : _("Path"),
-                allowNone  : true,
-                readOnly   : true
-            },{
-                xtype   : "button",
-                name    : "backup",
-                text    : _("Backup"),
-                scope   : this,
-                handler : Ext.Function.bind(me.onBackupButton, me, [ me ]),
-                margin  : "5 0 0 0"
-            },{
-                border : false,
-                html   : "<ul><li>" + _("Backup settings to a data drive.") + "</li></ul>"
-            },{
-                xtype   : "button",
-                name    : "restore",
-                text    : _("Restore"),
-                scope   : this,
-                handler : Ext.Function.bind(me.onRestoreButton, me, [ me ]),
-                margin  : "5 0 0 0"
-            },{
-                border : false,
-                html   : "<ul><li>" + _("Restore settings from a data drive.") + "</li></ul>"
-            }]
-            },{
-            xtype    : "fieldset",
+                        xtype    : "fieldset",
             title    : "Second version",
             defaults : {
                 labelSeparator : ""
@@ -291,27 +217,24 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 xtype      : "combo",
                 name       : "repo2",
                 fieldLabel : _("Repository"),
-                allowBlank : false,
-                editable   : false,
-                queryMode  : "local",
-                store      : Ext.create("OMV.data.Store", {
-                    autoLoad : true,
-                    model    : OMV.data.Model.createImplicit({
-                        idProperty : "name",
-                        fields     : [{
-                            name : "uuid",
-                            type : "string"
-                        },{
-                            name : "name",
-                            type : "string"
-                        },{
-                            name : "fork",
-                            type : "string"
-                        },{
-                            name : "branches",
-                            type : "array"
+                store: Ext.create("OMV.data.Store", {
+                    autoLoad: true,
+                    model: OMV.data.Model.createImplicit({
+                        idProperty: "name",
+                        fields: [{
+                            name: "uuid",
+                            type: "string"
+                        }, {
+                            name: "name",
+                            type: "string"
+                        }, {
+                            name: "fork",
+                            type: "string"
+                        }, {
+                            name: "branches",
+                            type: "array"
                         }],
-                        proxy : {
+                        proxy: {
                             type    : "rpc",
                             rpcData : {
                                 service : "Sickbeard",
@@ -321,76 +244,49 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                         }
                     })
                 }),
-                displayField  : "fork",
-                valueField    : "fork",
-                triggerAction : "all",
-                selectOnFocus : true,
-                plugins       : [{
-                    ptype : "fieldinfo",
-                    text  : _("The repository you want to use. If changing from a current repository, setting will be wiped.")
-                }],
-                listeners : {
-                    select : function(combo, records) {
-                        var record = records.pop();
-                        me.updateBranchCombo2(record.get("branches"));
-                    },
-                    change : function(combo, value) {
+                allowBlank: false,
+                displayField: "fork",
+                editable: false,
+                listeners: {
+                    scope: this,
+                    change: function(combo, value) {
                         var record = combo.store.findRecord("fork", value);
-                        me.updateBranchCombo2(record.get("branches"));
+
+                        this.updateBranchCombo2(record.get("branches"));
+                    },
+                    select: function(combo, records) {
+                        var record = records.pop();
+
+                        this.updateBranchCombo2(record.get("branches"));
                     }
-                }
-            },{
-                xtype         : "combo",
-                name          : "branch2",
-                fieldLabel    : _("Branch"),
-                queryMode     : "local",
-                store         : [],
-                allowBlank    : false,
-                editable      : false,
-                triggerAction : "all",
-                plugins       : [{
-                    ptype : "fieldinfo",
-                    text  : _("The branch you want to use. choose master if you don't know whats involed.")
+                },
+                queryMode: "local",
+                selectOnFocus: true,
+                triggerAction: "all",
+                valueField: "fork",
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("The repository you want to use. If changing from a current repository, setting will be wiped.")
+                }]
+            }, {
+                xtype: "combo",
+                name: "branch2",
+                fieldLabel: _("Branch"),
+                allowBlank: false,
+                editable: false,
+                queryMode: "local",
+                store: [],
+                triggerAction: "all",
+                plugins: [{
+                    ptype: "fieldinfo",
+                    text: _("The branch you want to use. choose master if you don't know what's involved.")
                 }]
             }]
         }];
     },
 
-    onBackupButton: function() {
-        var me = this;
-        me.doSubmit();
-        Ext.create("OMV.window.Execute", {
-            title      : _("Backup"),
-            rpcService : "Sickbeard",
-            rpcMethod  : "doBackup",
-            listeners  : {
-                scope     : me,
-                exception : function(wnd, error) {
-                    OMV.MessageBox.error(null, error);
-                }
-            }
-        }).show();
-    },
-
-    onRestoreButton: function() {
-        var me = this;
-        me.doSubmit();
-        Ext.create("OMV.window.Execute", {
-            title      : _("Restore"),
-            rpcService : "Sickbeard",
-            rpcMethod  : "doRestore",
-            listeners  : {
-                scope     : me,
-                exception : function(wnd, error) {
-                    OMV.MessageBox.error(null, error);
-                }
-            }
-        }).show();
-    },
-
     updateBranchCombo : function(values) {
-        var me = this;
-        var branchCombo = me.findField("branch");
+        var branchCombo = this.findField("branch");
 
         branchCombo.store.removeAll();
 
@@ -401,8 +297,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
     },
 
     updateBranchCombo2 : function(values) {
-        var me = this;
-        var branchCombo2 = me.findField("branch2");
+        var branchCombo2 = this.findField("branch2");
 
         branchCombo2.store.removeAll();
 

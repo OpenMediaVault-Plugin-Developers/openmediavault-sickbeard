@@ -5,39 +5,50 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
+OMV_SICKBEARD_APP_PATH="/opt/sickbeard"
+OMV_SICKBEARD_OLD_DATA_PATH="/home/sickbeard/.sickbeard"
+OMV_SICKBEARD_OLD_DATA_PATH2="/home/sickbeard/.sickbeard2"
+OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
+OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard2"
+OMV_SICKBEARD_USER="sickbeard"
+
 case "$1" in
     configure)
+        SERVICE_XPATH_NAME="sickbeard"
+        SERVICE_XPATH="/config/services/${SERVICE_XPATH_NAME}"
+
+        if ! omv_config_exists "${SERVICE_XPATH}"; then
+            omv_config_add_element "/config/services" "${SERVICE_XPATH_NAME}"
+            omv_config_add_element "${SERVICE_XPATH}" "enable" "0"
+            omv_config_add_element "${SERVICE_XPATH}" "ssl" "0"
+            omv_config_add_element "${SERVICE_XPATH}" "ppass" "0"
+            omv_config_add_element "${SERVICE_XPATH}" "repo" "Please choose a repository"
+            omv_config_add_element "${SERVICE_XPATH}" "branch" "Please choose a branch"
+            omv_config_add_element "${SERVICE_XPATH}" "repo2" "Please choose a repository"
+            omv_config_add_element "${SERVICE_XPATH}" "branch2" "Please choose a branch"
+            omv_config_add_element "${SERVICE_XPATH}" "show_tab" "0"
+        fi
+
         if ! getent passwd sickbeard >/dev/null 2>&1; then
-            echo "Adding sickbeard user..."
-            useradd --create-home --groups users --no-user-group --shell /usr/sbin/nologin sickbeard
-            insserv -d sickbeard
-		else
-            echo "sickbeard user already exists."
+            adduser --quiet \
+                    --system \
+                    --group \
+                    --no-create-home \
+                    --disabled-password \
+                    $OMV_SICKBEARD_USER
         fi
 
-        if [ -e /var/run/sickbeard ]; then
-            echo "Cleaning old pid file..."
-            rm /var/run/sickbeard -Rf
+        if [ -e $OMV_SICKBEARD_OLD_DATA_PATH ]; then
+            cp -Ra $OMV_SICKBEARD_OLD_DATA_PATH/* $OMV_SICKBEARD_DATA_PATH
+			rm -Rf OMV_SICKBEARD_OLD_DATA_PATH
         fi
 
-        chmod 775 /opt
-        chown root:users /opt
-
-        if ! omv_config_exists "/config/services/sickbeard"; then
-            echo "Initial configuration."
-            object="<enable>0</enable>"
-            object="${object}<showtab>0</showtab>"
-            object="${object}<ssl>0</ssl>"
-            object="${object}<ppass>0</ppass>"
-            object="${object}<branch>Please choose a branch</branch>"
-            object="${object}<repo>Please choose a repository</repo>"
-            object="${object}<branch2>Please choose a branch</branch2>"
-            object="${object}<repo2>Please choose a repository</repo2>"
-            object="${object}<forks></forks>"
-            omv_config_add_element "/config/services" "sickbeard" "${object}" true
+        if [ -e $OMV_SICKBEARD_OLD_DATA_PATH2 ]; then
+            mv $OMV_SICKBEARD_OLD_DATA_PATH2 $OMV_SICKBEARD_DATA_PATH2
         fi
 
-        omv_install_fixperms
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_USER $OMV_SICKBEARD_APP_PATH
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_USER $OMV_SICKBEARD_DATA_PATH -R
 
         # Activate package triggers. These triggers are only set during the
         # package installation.
@@ -53,5 +64,7 @@ case "$1" in
         exit 1
     ;;
 esac
+
+#DEBHELPER#
 
 exit 0

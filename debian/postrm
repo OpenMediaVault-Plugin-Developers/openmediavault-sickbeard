@@ -5,8 +5,33 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
+OMV_SICKBEARD_APP_PATH="/opt/sickbeard/"
+OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
+OMV_SICKBEARD_APP_PATH2="/opt/sickbeard2/"
+OMV_SICKBEARD_DATA_PATH2="/var/opt/sickbeard2"
+OMV_SICKBEARD_XPATH="/config/services/sickbeard"
+
 case "$1" in
     purge)
+        omv_config_delete OMV_SICKBEARD_XPATH
+
+        if [ -d $OMV_SICKBEARD_APP_PATH ]; then
+            find $OMV_SICKBEARD_APP_PATH -mindepth 1 -delete
+        fi
+
+        if [ -d $OMV_SICKBEARD_APP_PATH2 ]; then
+            find $OMV_SICKBEARD_APP_PATH2 -mindepth 1 -delete
+        fi
+
+        if [ -d $OMV_SICKBEARD_DATA_PATH ]; then
+            find $OMV_SICKBEARD_DATA_PATH -mindepth 1 -delete
+        fi
+
+        if [ -d $OMV_SICKBEARD_DATA_PATH2 ]; then
+            find $OMV_SICKBEARD_DATA_PATH2 -mindepth 1 -delete
+        fi
+
+
         if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
             PID=`cat /var/run/sickbeard/sickbeard.pid`
             kill -0 $PID 2>/dev/null;

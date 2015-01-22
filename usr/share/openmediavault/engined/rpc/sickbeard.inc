@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2013-2014 OpenMediaVault Plugin Developers
+ * Copyright (C) 2013-2015 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,15 @@ require_once "openmediavault/config.inc";
 require_once "openmediavault/error.inc";
 require_once "openmediavault/notify.inc";
 require_once "openmediavault/object.inc";
-require_once "openmediavault/product.inc";
 require_once "openmediavault/rpcservice.inc";
-require_once "openmediavault/system.inc";
-require_once "openmediavault/util.inc";
 
 class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 {
-    private $sickbeardSettingsDir = "/home/sickbeard/.sickbeard/";
-    private $sickbeardSettingsFile = "/home/sickbeard/.sickbeard/config.ini";
+    private $sickbeardSettingsDir = "/var/opt/sickbeard/";
+    private $sickbeardSettingsFile = "/var/opt/sickbeard/config.ini";
 
-    private $sickbeard2SettingsDir = "/home/sickbeard/.sickbeard2/";
-    private $sickbeard2SettingsFile = "/home/sickbeard/.sickbeard2/config.ini";
+    private $sickbeard2SettingsDir = "/var/opt/sickbeard2/";
+    private $sickbeard2SettingsFile = "/var/opt/sickbeard2/config.ini";
 
     private function getPluginName()
     {
@@ -44,19 +41,19 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
-    private function getXPath()
+    private function getXpath()
     {
         return sprintf("//services/%s", $this->getPluginName());
     }
 
-    private function getXPathForks()
+    private function getForksXpath()
     {
-        return sprintf("%s/forks", $this->getXPath());
+        return sprintf("%s/forks", $this->getXpath());
     }
 
-    private function getXPathFork()
+    private function getForkXpath()
     {
-        return sprintf("%s/fork", $this->getXPathForks());
+        return sprintf("%s/fork", $this->getForksXpath());
     }
 
     public function getName()
@@ -87,18 +84,18 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             "role" => OMV_ROLE_ADMINISTRATOR
         ));
 
-        $object = $xmlConfig->get($this->getXPath());
+        $object = $xmlConfig->get($this->getXpath());
 
         if (is_null($object)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath()
+                $this->getXpath()
             );
         }
 
         $port = 8081;
 
-        // Get current port as set in sickbeards config file
+        // Get current port as set in sickbeards config file.
         if (file_exists($this->sickbeardSettingsFile)) {
             $config = parse_ini_file(
                 $this->sickbeardSettingsFile,
@@ -140,9 +137,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         $this->validateMethodParams(
             $params,
             '{
-                "type"       : "object",
-                "properties" : {
-                    "enable"    : { "type" : "boolean" },
+                "type": "object",
+                "properties": {
+                    "enable"        : { "type": "boolean" },
                     "showtab"       : { "type" : "boolean" },
                     "newinstance"   : { "type" : "boolean" },
                     "newinstenable" : { "type" : "boolean" },
@@ -152,27 +149,18 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "repo"          : { "type" : "string" },
                     "branch2"       : { "type" : "string", "optional" : true },
                     "repo2"         : { "type" : "string", "optional" : true },
-                    "port"          : { "type" : "integer" },
-                    "mntentref"     : { ' . $GLOBALS['OMV_JSONSCHEMA_UUID_NONE'] . ' },
-                    "path"          : { "type" : "string", "optional" : true }
+                    "port"          : { "type" : "integer" }
                 }
             }'
         );
 
-        $xPath = sprintf("//system/fstab/mntent[uuid='%s']", $params["mntentref"]);
-        $deviceDir = $xmlConfig->get($xPath);
-        $deviceDir = $deviceDir["dir"];
-
-        $backupPath = "$deviceDir/SBbackup";
-        $params["path"] = $backupPath;
-
         // Get existing configuration object
-        $oldObject = $xmlConfig->get($this->getXPath());
+        $oldObject = $xmlConfig->get($this->getXpath());
 
         if (is_null($oldObject)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath()
+                $this->getXpath()
             );
         }
 
@@ -213,15 +201,13 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             "branch2"       => $params["branch2"],
             "repo2"         => $params["repo2"],
             "port"          => $params["port"],
-            "mntentref"     => $params["mntentref"],
-            "path"          => $params["path"],
-            "forks"         => isset($oldObject['forks']) ? $oldObject['forks'] : array(),
+            "forks"         => $oldObject['forks'],
         );
 
-        if (false === $xmlConfig->replace($this->getXPath(), $object)) {
+        if ($xmlConfig->replace($this->getXpath(), $object) === false) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_SET_OBJECT_FAILED,
-                $this->getXPath()
+                $this->getXpath()
             );
         }
 
@@ -235,12 +221,60 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         return $object;
     }
 
+    public function enumerateRepos($params, $context)
+    {
+        global $xmlConfig;
+
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
+
+        // Get configuration data.
+        $userRepos = $xmlConfig->getList($this->getForkXpath());
+
+        if (is_null($userRepos)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getForkXpath()
+            );
+        }
+
+        // Add default repos and their branches. Do it here so users can't
+        // delete them.
+        $defaultRepos = array(
+            array(
+                "uuid" => "11111111-2222-3333-4444-555555555555",
+                "name" => "Main Branch",
+                "fork" => "https://github.com/midgetspy/Sick-Beard.git",
+                "branches" => array(
+                    "1080i",
+                    "anime",
+                    "custom_torrents",
+                    "development",
+                    "katph",
+                    "master",
+                    "multi_snatch",
+                    "naming_error_info",
+                    "storm",
+                    "windows_binaries",
+                    "xmpp"
+                )
+            ),
+        );
+
+        $repos = array_merge($defaultRepos, $userRepos);
+
+        return $repos;
+    }
+
     public function getForks($params, $context)
     {
         global $xmlConfig;
 
         // Validate the RPC caller context.
-        $this->validateMethodContext($context, array("role" => OMV_ROLE_ADMINISTRATOR));
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
 
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams(
@@ -257,10 +291,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
 
         // Get configuration data.
-        $objects = $xmlConfig->getList($this->getXPathFork());
+        $objects = $xmlConfig->getList($this->getForkXpath());
 
         if (is_null($objects)) {
-            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $this->getXPathFork());
+            throw new OMVException(OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED, $this->getForkXpath());
         }
 
         // Filter the result.
@@ -294,13 +328,13 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
 
         // Get the configuration object.
-        $xPath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
-        $object = $xmlConfig->get($xPath);
+        $xpath = sprintf("%s[uuid='%s']", $this->getForkXpath(), $params["uuid"]);
+        $object = $xmlConfig->get($xpath);
 
         if (is_null($object)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $xPath
+                $xpath
             );
         }
 
@@ -350,7 +384,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if (empty($output)) {
             throw new OMVException(
                 OMVErrorMsg::E_EXEC_MISC,
-                "No branches found, check url"
+                "No branches found, check url."
             );
         }
 
@@ -361,7 +395,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             );
         }
 
-        // Prepare configuration data and add all branches found
+        // Prepare configuration data and add all branches found.
         $object = array(
             "uuid"        => ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"])
                 ? OMVUtil::uuid() : $params["uuid"],
@@ -376,14 +410,14 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if ($params["uuid"] == $GLOBALS["OMV_UUID_UNDEFINED"]) {
             // Append object to configuration.
             $success = $xmlConfig->set(
-                $this->getXPathForks(),
+                $this->getForksXpath(),
                 array("fork" => $object)
             );
         } else {
             // Update existing configuration object.
-            $xPath = sprintf(
+            $xpath = sprintf(
                 "%s[uuid='%s']",
-                $this->getXPathFork(),
+                $this->getForkXpath(),
                 $params["uuid"]
             );
         }
@@ -417,14 +451,28 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         );
 
         // Delete the configuration object.
-        $xPath = sprintf("%s[uuid='%s']", $this->getXPathFork(), $params["uuid"]);
+        $xpath = sprintf("%s[uuid='%s']", $this->getForkXpath(), $params["uuid"]);
 
-        return $this->deleteConfigObjectByPath($xPath);
+        return $this->deleteConfigObjectByPath($xpath);
     }
 
     public function doBackup($params, $context)
     {
-        global $xmlConfig;
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
+
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams(
+            $params,
+            '{
+                "type": "object",
+                "properties": {
+                    "sharedfolderref": { ' . $GLOBALS["OMV_JSONSCHEMA_UUID"] . ' }
+                }
+            }'
+        );
 
         // Sickbeard needs to have run once to generate its settings. Check if this is true
         if (!file_exists($this->sickbeardSettingsFile)) {
@@ -458,10 +506,13 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 $bgOutputFilename
             );
 
-            // Get the configuration object.
-            $xPath = sprintf("%s/path", $this->getXPath());
-            $backupPath = $xmlConfig->get($xPath);
+            $backupPath = sprintf(
+                "%s%ssickbeard.tar.gz",
+                $this->getSharedFolderPathByUuid($params["sharedfolderref"]),
+                DIRECTORY_SEPARATOR
+            );
 
+            // Check for other instance.
             if (file_exists($this->sickbeard2SettingsFile)) {
                 $cmd = sprintf(
                     "tar -zcvPf %s %s 2>&1",
@@ -487,21 +538,37 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
     public function doRestore($params, $context)
     {
-        global $xmlConfig;
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, array(
+            "role" => OMV_ROLE_ADMINISTRATOR
+        ));
+
+        // Validate the parameters of the RPC service method.
+        $this->validateMethodParams(
+            $params,
+            '{
+                "type": "object",
+                "properties": {
+                    "sharedfolderref": { ' . $GLOBALS["OMV_JSONSCHEMA_UUID"] . ' }
+                }
+            }'
+        );
 
         // Validate the RPC caller context.
         $this->validateMethodContext($context, array(
             "role" => OMV_ROLE_ADMINISTRATOR
         ));
 
-        // Get the configuration object.
-        $xPath = sprintf("%s/path", $this->getXPath());
-        $backupPath = $xmlConfig->get($xPath);
+        $backupPath = sprintf(
+            "%s%ssickbeard.tar.gz",
+            $this->getSharedFolderPathByUuid($params["sharedfolderref"]),
+            DIRECTORY_SEPARATOR
+        );
 
         if (is_null($backupPath)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $xPath
+                $xpath
             );
         }
 
@@ -566,50 +633,22 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         }
     }
 
-    public function enumerateRepos($params, $context)
+    private function getSharedFolderPathByUuid($uuid)
     {
         global $xmlConfig;
 
-        $this->validateMethodContext($context, array(
-            "role" => OMV_ROLE_ADMINISTRATOR
-        ));
+        $xpath = sprintf("//system/shares/sharedfolder[uuid='%s']", $uuid);
+        $sharedFolder = $xmlConfig->get($xpath);
+        $sharedFolderRelDirPath = $sharedFolder["reldirpath"];
 
-        // Get configuration data.
-        $userRepos = $xmlConfig->getList($this->getXPathFork());
-
-        if (is_null($userRepos)) {
-            throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPathFork()
-            );
-        }
-
-        // Add default repos and their branches. Do it here so users can't
-        // delete them.
-        $defaultRepos = array(
-            array(
-                "uuid" => "11111111-2222-3333-4444-555555555555",
-                "name" => "Main Branch",
-                "fork" => "https://github.com/midgetspy/Sick-Beard.git",
-                "branches" => array(
-                    "1080i",
-                    "anime",
-                    "custom_torrents",
-                    "development",
-                    "katph",
-                    "master",
-                    "multi_snatch",
-                    "naming_error_info",
-                    "storm",
-                    "windows_binaries",
-                    "xmpp"
-                )
-            ),
+        $xpath = sprintf(
+            "//system/fstab/mntent[uuid='%s']",
+            $sharedFolder["mntentref"]
         );
+        $mountPoint = $xmlConfig->get($xpath);
+        $mountPointDir = $mountPoint["dir"];
 
-        $repos = array_merge($defaultRepos, $userRepos);
-
-        return $repos;
+        return $mountPointDir . DIRECTORY_SEPARATOR . $sharedFolderRelDirPath;
     }
 }
 

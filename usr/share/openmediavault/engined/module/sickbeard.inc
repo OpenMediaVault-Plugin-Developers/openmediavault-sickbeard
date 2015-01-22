@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Copyright (C) 2013-2014 OpenMediaVault Plugin Developers
+ * Copyright (C) 2013-2015 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ require_once "openmediavault/config.inc";
 require_once "openmediavault/error.inc";
 require_once "openmediavault/initscript.inc";
 require_once "openmediavault/module.inc";
-require_once "openmediavault/util.inc";
 
 class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
     OMVINotifyListener,
@@ -37,7 +36,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
         return sprintf("org.openmediavault.service.%s", $this->getPluginName());
     }
 
-    private function getXPath()
+    private function getXpath()
     {
         return sprintf("//services/%s", $this->getPluginName());
     }
@@ -45,6 +44,29 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
     public function getName()
     {
         return "Sickbeard";
+    }
+
+    public function getStatus()
+    {
+        global $xmlConfig;
+
+        $object = $xmlConfig->get($this->getXpath());
+
+        if (is_null($object)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXpath()
+            );
+        }
+
+        $initd = new OMVSysVInitScript($this->getPluginName());
+
+        return array(
+            "name"    => $this->getPluginName(),
+            "title"   => gettext($this->getName()),
+            "enabled" => boolval($object["enable"]),
+            "running" => $initd->status() == 0
+        );
     }
 
     public function applyConfig()
@@ -59,39 +81,16 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
         }
     }
 
-    public function getStatus()
-    {
-        global $xmlConfig;
-
-        $object = $xmlConfig->get($this->getXPath());
-
-        if (is_null($object)) {
-            throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath()
-            );
-        }
-
-        $initd = new OMVSysVInitScript($this->getPluginName());
-
-        return array(
-            "name"    => $this->getPluginName(),
-            "title"   => gettext($this->getName()),
-            "enabled" => boolval($object["enable"]),
-            "running" => $initd->status() == 0
-        );
-    }
-
     public function startService()
     {
         global $xmlConfig;
 
-        $object = $xmlConfig->get($this->getXPath());
+        $object = $xmlConfig->get($this->getXpath());
 
         if (is_null($object)) {
             throw new OMVException(
                 OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getXPath()
+                $this->getXpath()
             );
         }
 

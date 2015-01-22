@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 OpenMediaVault Plugin Developers
+ * Copyright (C) 2013-2015 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,18 +22,16 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
     extend : "OMV.workspace.panel.Panel",
 
     initComponent : function() {
-        var me = this;
-
         OMV.Rpc.request({
             scope    : this,
             callback : function(id, success, response) {
                 var proxy = response.ppass;
                 if (proxy == true) {
-                    var link = "http://" + location.hostname + "/sickbeard/home/";
+                    var link = "http://" + window.location.hostname + "/sickbeard/home/";
                 } else {
                 var link = "http://" + window.location.hostname + ":" + response.port + "/home/";
 				}
-                me.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
+                this.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
             },
             relayErrors : false,
             rpcData     : {
@@ -42,7 +40,7 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
             }
         });
 
-        me.callParent(arguments);
+        this.callParent(arguments);
     }
 });
 
@@ -50,6 +48,6 @@ OMV.WorkspaceManager.registerPanel({
     id        : "webinterface",
     path      : "/service/sickbeard",
     text      : _("Web Interface"),
-    position  : 20,
+    position  : 40,
     className : "OMV.module.admin.service.sickbeard.WebInterface"
 });

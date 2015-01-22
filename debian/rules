@@ -1,5 +1,8 @@
 #!/usr/bin/make -f
 
+# Verbose mode
+#export DH_VERBOSE=1
+
 include ./openmediavault.mk
 
 PLUGIN_NAME=sickbeard
@@ -22,7 +25,7 @@ binary-indep: install omv_clean_scm
 	dh_testroot
 	dh_installchangelogs
 	dh_installdebconf
-	dh_installinit --name=sickbeard
+	dh_installinit --no-start --name=sickbeard
 	dh_lintian
 	dh_link
 	dh_compress
