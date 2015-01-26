@@ -9,7 +9,7 @@ OMV_SICKBEARD_APP_PATH="/opt/sickbeard"
 OMV_SICKBEARD_OLD_DATA_PATH="/home/sickbeard/.sickbeard"
 OMV_SICKBEARD_OLD_DATA_PATH2="/home/sickbeard/.sickbeard2"
 OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
-OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard2"
+OMV_SICKBEARD_DATA_PATH2="/var/opt/sickbeard2"
 OMV_SICKBEARD_USER="sickbeard"
 OMV_SICKBEARD_GROUP="users"
 

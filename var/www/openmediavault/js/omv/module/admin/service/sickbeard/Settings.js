@@ -55,6 +55,26 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
         this.callParent(arguments);
     },
 
+    plugins      : [{ 
+        ptype        : "linkedfields", 
+        correlations : [{ 
+            name       : [ 
+                "port", 
+            ], 
+            properties : "!show" 
+        },{ 
+            name       : [ 
+                "newinstenable", 
+                "repo2", 
+                "branch2", 
+            ], 
+            conditions : [ 
+                { name  : "newinstance", value : false } 
+            ], 
+            properties : "!show" 
+        }] 
+    }],
+
     getButtonItems: function() {
         var items = this.callParent(arguments);
 
@@ -155,12 +175,16 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                     change: function(combo, value) {
                         var record = combo.store.findRecord("fork", value);
 
-                        this.updateBranchCombo(record.get("branches"));
+                        if (record != null) {
+                            this.updateBranchCombo(record.get("branches"));
+                        }
                     },
                     select: function(combo, records) {
                         var record = records.pop();
 
-                        this.updateBranchCombo(record.get("branches"));
+                        if (record != null) {
+                            this.updateBranchCombo(record.get("branches"));
+                        }
                     }
                 },
                 queryMode: "local",
@@ -244,7 +268,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                         }
                     })
                 }),
-                allowBlank: false,
+                allowBlank: true,
                 displayField: "fork",
                 editable: false,
                 listeners: {
@@ -252,12 +276,16 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                     change: function(combo, value) {
                         var record = combo.store.findRecord("fork", value);
 
-                        this.updateBranchCombo2(record.get("branches"));
+                        if (record != null) {
+                            this.updateBranchCombo2(record.get("branches"));
+                        }
                     },
                     select: function(combo, records) {
                         var record = records.pop();
 
-                        this.updateBranchCombo2(record.get("branches"));
+                        if (record != null) {
+                            this.updateBranchCombo2(record.get("branches"));
+                        }
                     }
                 },
                 queryMode: "local",

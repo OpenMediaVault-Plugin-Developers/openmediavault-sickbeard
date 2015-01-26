@@ -5,8 +5,22 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-repo="$(omv_config_get "//services/sickbeard/repo")"
-branch="$(omv_config_get "//services/sickbeard/branch")"
+if [ -f /etc/default/sickbeard ]; then
+    . /etc/default/sickbeard
+fi
+
+OMV_SICKBEARD_APP_PATH1=${CP_HOME-/opt/sickbeard/}
+OMV_SICKBEARD_DATA_PATH1=${CP_DATA-/var/opt/sickbeard}
+OMV_SICKBEARD_DATA_CONFIG1="${OMV_SICKBEARD_DATA_PATH1}/config.ini"
+OMV_SICKBEARD_APP_PATH2=${CP_HOME2-/opt/sickbeard2/}
+OMV_SICKBEARD_DATA_PATH2=${CP_DATA2-/var/opt/sickbeard2}
+OMV_SICKBEARD_DATA_CONFIG2="${OMV_SICKBEARD_DATA_PATH2}/config.ini"
+OMV_SICKBEARD_USER=${CP_USER-sickbeard}
+OMV_SICKBEARD_GROUP=${CP_GROUP-users}
+OMV_SICKBEARD_XPATH="/config/services/sickbeard"
+
+
+
 repo2="$(omv_config_get "//services/sickbeard/repo2")"
 branch2="$(omv_config_get "//services/sickbeard/branch2")"
 newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
@@ -14,32 +28,27 @@ newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
 ppass="$(omv_config_get "//services/sickbeard/ppass")"
 ssl="$(omv_config_get "//services/sickbeard/ssl")"
 
-RUN_AS="sickbeard"
-APP_PATH="/opt/sickbeard"
-APP_PATH2="/opt/sickbeard2"
-DATA_DIR="/home/sickbeard/.sickbeard"
-DATA_DIR2="/home/sickbeard/.sickbeard2"
-CONFIG="${DATA_DIR}/config.ini"
-CONFIG2="${DATA_DIR2}/config.ini"
-
 if [ -f "/etc/init.d/sickbeard2" ]; then
     /etc/init.d/sickbeard2 stop
 fi
 
-switch_repo() {
-    if [ -d $APP_PATH ]; then
-        rm -Rf $APP_PATH
+switch_repo()
+{
+    local repo=$1
+    local branch=$2
+
+    if [ -d $OMV_SICKBEARD_APP_PATH1 ]; then
+        find $OMV_SICKBEARD_APP_PATH1 -mindepth 1 -delete
     fi
 
-    if [ -d $DATA_DIR ]; then
-        rm -Rf $DATA_DIR
+    if [ -d $OMV_SICKBEARD_DATA_PATH1 ]; then
+        find $OMV_SICKBEARD_DATA_PATH1 -mindepth 1 -delete
     fi
 
-    cd /
-    sudo -u $RUN_AS git clone $repo -b $branch $APP_PATH
-    sudo -u $RUN_AS mkdir -p $DATA_DIR
+    cd /home
+    su -s /bin/sh -c "git clone $repo -b $branch $OMV_SICKBEARD_APP_PATH1" $OMV_SICKBEARD_USER
 
-    if [ ! -f $CONFIG ]; then
+    if [ ! -f $OMV_SICKBEARD_DATA_CONFIG1 ]; then
         echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
@@ -49,52 +58,62 @@ web_host = 0.0.0.0
 enable_https = 0
 https_cert = server.crt
 https_key = server.key
-web_root = ""' > $CONFIG
-    chown $RUN_AS:users $CONFIG
-    chmod 775 $CONFIG
+web_root = ""' > $OMV_SICKBEARD_DATA_CONFIG1
+    chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_DATA_CONFIG1
+    chmod 775 $OMV_SICKBEARD_DATA_CONFIG1
     fi
 }
 
-switch_branch() {
-    cd $APP_PATH
-    sudo -u $RUN_AS git reset --hard
-    sudo -u $RUN_AS git checkout $branch
+switch_branch()
+{
+    local branch=$1
+
+    cd $OMV_SICKBEARD_APP_PATH1
+
+    cd /home
+    su -s /bin/sh -c "git reset --hard" $OMV_SICKBEARD_USER
+    su -s /bin/sh -c "git checkout $branch" $OMV_SICKBEARD_USER
 }
 
-# If /opt/sickbeard does not exists
+repo="$(omv_config_get "//services/sickbeard/repo")"
+branch="$(omv_config_get "//services/sickbeard/branch")"
+
+# If $OMV_SICKBEARD_APP_PATH1 does not exists
 # must be first clone
-if [ ! -e $APP_PATH ]; then
+if [ ! -e $OMV_SICKBEARD_APP_PATH1 ]; then
     if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
+        switch_repo $repo $branch
     fi
 fi
 
-# If /opt/sickbeard exists and is not empty
-# fetch current repo and branch
-if [ -d $APP_PATH ]; then
-    if [ ! -f $APP_PATH/SickBeard.py ]; then
-	    rm -Rf $APP_PATH  & >/dev/null
+# If $OMV_SICKBEARD_APP_PATH1 exists and is not empty fetch current repo and branch.
+if [ -n "$(ls -A $OMV_SICKBEARD_APP_PATH1)" ]; then
+    if [ ! -f "${OMV_SICKBEARD_APP_PATH1}SickBeard.py" ]; then
+	    find $OMV_SICKBEARD_APP_PATH1 -mindepth 1 -delete
 		if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-            switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
-			exit
+            switch_repo $repo $branch
+			exit 0
         fi
 	fi
 
-    if [ -n "$(ls -A $APP_PATH)" ]; then
-        cd $APP_PATH
+    if [ -n "$(ls -A $OMV_SICKBEARD_APP_PATH1)" ]; then
+        cd $OMV_SICKBEARD_APP_PATH1
+
         current_repo="$(git config --get remote.origin.url)"
         current_branch="$(git rev-parse --abbrev-ref HEAD)"
 
         if [ $repo != $current_repo ]; then
-            switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
+            switch_repo $repo $branch
+            exit 0
         fi
 
         if [ $branch != $current_branch ]; then
-            switch_branch $branch $APP_PATH $RUN_AS
+            switch_branch $branch
+            exit 0
         fi
     else
-        rm -Rf $APP_PATH
-        switch_repo $repo $branch $APP_PATH $DATA_DIR $RUN_AS $CONFIG
+        find $OMV_SICKBEARD_APP_PATH1 -mindepth 1 -delete
+        switch_repo $repo $branch
     fi
 fi
 
@@ -204,37 +223,42 @@ EOF
         insserv -d sickbeard2
     fi
     if [ "${newinstenable}" = "1" ]; then
-        if [ ! -d "$APP_PATH2" ]; then
-                cd /
-            sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
-            sudo -u $RUN_AS mkdir -p $DATA_DIR2
+        if [ ! -d $OMV_SICKBEARD_APP_PATH2 ]; then
+            cd /home
+            su -s /bin/sh -c "git clone $repo -b $branch $OMV_SICKBEARD_APP_PATH2" $OMV_SICKBEARD_USER
+            # Can not create dir as user so create it then change ownership.
+            mkdir -p $OMV_SICKBEARD_DATA_PATH2
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_DATA_PATH2
         else
-            cd $APP_PATH2
+            cd $OMV_SICKBEARD_APP_PATH2
             current_repo2="$(git config --get remote.origin.url)"
 
             if [ $repo2 != $current_repo2 ]; then
-                if [ -d "$APP_PATH2" ]; then
-                    rm -Rf $APP_PATH2
+                if [ -d $OMV_SICKBEARD_APP_PATH2 ]; then
+                    find $OMV_SICKBEARD_APP_PATH2 -mindepth 1 -delete
                 fi
 
-                if [ -d "$DATA_DIR2" ]; then
-                    rm -Rf $DATA_DIR2
+                if [ -d $OMV_SICKBEARD_DATA_PATH2 ]; then
+                    find $OMV_SICKBEARD_DATA_PATH2 -mindepth 1 -delete
                 fi
-                cd /
-                sudo -u $RUN_AS git clone $repo2 -b $branch2 $APP_PATH2
-                sudo -u $RUN_AS mkdir -p $DATA_DIR2
+
+                cd /home
+                su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD_APP_PATH2" $OMV_SICKBEARD_USER
+                # Can not create dir as user so create it then change ownership.
+                mkdir -p $OMV_SICKBEARD_DATA_PATH2
+                chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_DATA_PATH2
             fi
 
-            cd $APP_PATH2
+            cd $OMV_SICKBEARD_APP_PATH2
             current_branch2="$(git rev-parse --abbrev-ref HEAD)"
 
             if [ $branch2 != $current_branch2 ]; then
-                cd $APP_PATH2
-                sudo -u $RUN_AS git reset --hard
-                sudo -u $RUN_AS git checkout $branch2
+                cd /home
+                su -s /bin/sh -c "git reset --hard" $OMV_SICKBEARD_USER
+                su -s /bin/sh -c "git checkout $branch2" $OMV_SICKBEARD_USER
             fi
         fi
-        if [ ! -f "$CONFIG2" ]; then
+        if [ ! -f $OMV_SICKBEARD_DATA_CONFIG2 ]; then
             echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
@@ -244,12 +268,12 @@ web_host = 0.0.0.0
 enable_https = 0
 https_cert = server.crt
 https_key = server.key
-web_root = ""' > $CONFIG2
-            chown $RUN_AS:users $CONFIG2
-            chmod 775 $CONFIG2
+web_root = ""' > $OMV_SICKBEARD_DATA_CONFIG2
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_DATA_CONFIG2
+            chmod 775 $OMV_SICKBEARD_DATA_CONFIG2
         else
-            sed -i 's/^port = 8081/port = 8082/' $CONFIG2
-            sed -i 's/^web_port = 8081/web_port = 8082/' $CONFIG2
+            sed -i 's/^port = 8081/port = 8082/' $OMV_SICKBEARD_DATA_CONFIG2
+            sed -i 's/^web_port = 8081/web_port = 8082/' $OMV_SICKBEARD_DATA_CONFIG2
         fi
     fi
 else
@@ -265,61 +289,60 @@ else
             fi
         fi
 
-        rm -Rf $DATA_DIR2
+        find $OMV_SICKBEARD_DATA_PATH2 -mindepth 1 -delete
         rm -Rf /etc/init.d/sickbeard2
-        rm -Rf $APP_PATH2
+        find $OMV_SICKBEARD_APP_PATH2 -mindepth 1 -delete
     fi
 fi
 
 if [ "${ssl}" = "1" ]; then
-    if [ ! -f "/home/sickbeard/Certificate.crt" ]; then
-        CERTIFICATE_DIR=/home/sickbeard
+    if [ ! -f "${OMV_SICKBEARD_DATA_PATH1}/Certificate.crt" ]; then
         # Create the certificate files.
         xmlstarlet sel -t -m "//system/certificates/sslcertificate" \
           -v uuid -i "position() != last()" -n -b \
           ${OMV_CONFIG_FILE} | xmlstarlet unesc |
           while read uuid; do
-                  crtfile="${CERTIFICATE_DIR}/Certificate.crt"
+                  crtfile="${OMV_SICKBEARD_DATA_PATH1}/Certificate.crt"
                   xmlstarlet sel -t -m "//system/certificates/sslcertificate[uuid='${uuid}']" \
                         -v certificate \
                         ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${crtfile}
                   chmod 0640 ${crtfile}
-                  chown $RUN_AS:users ${crtfile}
+                  chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP ${crtfile}
 
-                  keyfile="${CERTIFICATE_DIR}/Private.key"
+                  keyfile="${OMV_SICKBEARD_DATA_PATH1}/Private.key"
                   xmlstarlet sel -t -m "//system/certificates/sslcertificate[uuid='${uuid}']" \
                         -v privatekey \
                         ${OMV_CONFIG_FILE} | xmlstarlet unesc > ${keyfile}
                   chmod 0600 ${keyfile}
-                  chown $RUN_AS:users ${keyfile}
+                  chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP ${keyfile}
           done
         #Enable
-        if [ -f "$CONFIG" ]; then
-            sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG
-            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG
-            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG
+        if [ -f $OMV_SICKBEARD_DATA_CONFIG1 ]; then
+            sed -i 's/^enable_https.*/enable_https = 1/' $OMV_SICKBEARD_DATA_CONFIG1
+            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $OMV_SICKBEARD_DATA_CONFIG1
+            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $OMV_SICKBEARD_DATA_CONFIG1
         fi
-        if [ -f "$CONFIG2" ]; then
-            sed -i 's/^enable_https.*/enable_https = 1/' $CONFIG2
-            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $CONFIG2
-            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $CONFIG2
+        if [ -f $OMV_SICKBEARD_DATA_CONFIG2 ]; then
+            sed -i 's/^enable_https.*/enable_https = 1/' $OMV_SICKBEARD_DATA_CONFIG2
+            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $OMV_SICKBEARD_DATA_CONFIG2
+            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $OMV_SICKBEARD_DATA_CONFIG2
         fi
     fi
 else
-    if [ -f "/home/sickbeard/Certificate.crt" ]; then
+    if [ -f "${OMV_SICKBEARD_DATA_PATH1}/Certificate.crt" ]; then
         #Disable
-        if [ -f "$CONFIG" ]; then
-            sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG
-            sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG
-            sed -i 's/^https_key.*/https_key = server.key/' $CONFIG
+        if [ -f $OMV_SICKBEARD_DATA_CONFIG1 ]; then
+            sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD_DATA_CONFIG1
+            sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD_DATA_CONFIG1
+            sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD_DATA_CONFIG1
         fi
-        if [ -f "$CONFIG2" ]; then
-            sed -i 's/^enable_https.*/enable_https = 0/' $CONFIG2
-            sed -i 's/^https_cert.*/https_cert = server.crt/' $CONFIG2
-            sed -i 's/^https_key.*/https_key = server.key/' $CONFIG2
+        if [ -f $OMV_SICKBEARD_DATA_CONFIG2 ]; then
+            sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD_DATA_CONFIG2
+            sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD_DATA_CONFIG2
+            sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD_DATA_CONFIG2
         fi
-        rm -Rf /home/sickbeard/Certificate.crt > /dev/null 2>&1
-        rm -Rf /home/sickbeard/Private.key > /dev/null 2>&1
+        rm -Rf "${OMV_SICKBEARD_DATA_PATH1}/Certificate.crt" > /dev/null 2>&1
+        rm -Rf "${OMV_SICKBEARD_DATA_PATH1}/Private.key" > /dev/null 2>&1
     fi
 fi
 
@@ -332,11 +355,11 @@ location /sickbeard {
 }
 
 EOF
-    if [ -f "$CONFIG" ]; then
-        sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $CONFIG
+    if [ -f $OMV_SICKBEARD_DATA_CONFIG1 ]; then
+        sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $OMV_SICKBEARD_DATA_CONFIG1
     fi
-    if [ -f "$CONFIG2" ]; then
-        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $CONFIG2
+    if [ -f $OMV_SICKBEARD_DATA_CONFIG2 ]; then
+        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $OMV_SICKBEARD_DATA_CONFIG2
     fi
     if [ "${newinstance}" = "1" ]; then
         cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
@@ -351,11 +374,11 @@ EOF
     nginx -s reload
 else
     rm -Rf /etc/nginx/openmediavault-webgui.d/sb.conf > /dev/null 2>&1
-    if [ -f "$CONFIG" ]; then
-        sed -i 's/^web_root.*/web_root = ""/' $CONFIG
+    if [ -f $OMV_SICKBEARD_DATA_CONFIG1 ]; then
+        sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD_DATA_CONFIG1
     fi
-    if [ -f "$CONFIG2" ]; then
-        sed -i 's/^web_root.*/web_root = ""/' $CONFIG2
+    if [ -f $OMV_SICKBEARD_DATA_CONFIG2 ]; then
+        sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD_DATA_CONFIG2
     fi
     nginx -s reload
 fi
