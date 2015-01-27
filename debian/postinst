@@ -6,10 +6,10 @@ set -e
 . /usr/share/openmediavault/scripts/helper-functions
 
 OMV_SICKBEARD_APP_PATH="/opt/sickbeard"
-OMV_SICKBEARD_OLD_DATA_PATH="/home/sickbeard/.sickbeard"
-OMV_SICKBEARD_OLD_DATA_PATH2="/home/sickbeard/.sickbeard2"
-OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
-OMV_SICKBEARD_DATA_PATH2="/var/opt/sickbeard2"
+OMV_SICKBEARD1_OLD_DATA_PATH="/home/sickbeard/.sickbeard"
+OMV_SICKBEARD2_OLD_DATA_PATH="/home/sickbeard/.sickbeard2"
+OMV_SICKBEARD1_DATA_PATH="/var/opt/sickbeard"
+OMV_SICKBEARD2_DATA_PATH="/var/opt/sickbeard2"
 OMV_SICKBEARD_USER="sickbeard"
 OMV_SICKBEARD_GROUP="users"
 
@@ -39,17 +39,17 @@ case "$1" in
                     $OMV_SICKBEARD_USER
         fi
 
-        if [ -e $OMV_SICKBEARD_OLD_DATA_PATH ]; then
-            cp -Ra $OMV_SICKBEARD_OLD_DATA_PATH/* $OMV_SICKBEARD_DATA_PATH
-			rm -Rf OMV_SICKBEARD_OLD_DATA_PATH
+        if [ -e $OMV_SICKBEARD1_OLD_DATA_PATH ]; then
+            cp -Ra $OMV_SICKBEARD1_OLD_DATA_PATH/* $OMV_SICKBEARD1_DATA_PATH
+			rm -Rf OMV_SICKBEARD1_OLD_DATA_PATH
         fi
 
-        if [ -e $OMV_SICKBEARD_OLD_DATA_PATH2 ]; then
-            mv $OMV_SICKBEARD_OLD_DATA_PATH2 $OMV_SICKBEARD_DATA_PATH2
+        if [ -e $OMV_SICKBEARD2_OLD_DATA_PATH ]; then
+            mv $OMV_SICKBEARD2_OLD_DATA_PATH $OMV_SICKBEARD2_DATA_PATH
         fi
 
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD_APP_PATH
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GGOUP $OMV_SICKBEARD_DATA_PATH -R
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
+        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GGOUP $OMV_SICKBEARD1_DATA_PATH -R
 
         # Activate package triggers. These triggers are only set during the
         # package installation.
