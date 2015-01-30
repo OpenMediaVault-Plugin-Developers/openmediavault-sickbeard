@@ -115,6 +115,10 @@ if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
         find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
         switch_repo $repo $branch
     fi
+else
+    if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
+        switch_repo $repo $branch
+    fi
 fi
 
 if [ "${newinstance}" = "1" ]; then
