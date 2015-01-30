@@ -611,7 +611,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 rmdir($this->sickbeard2SettingsDir);
                 $cmd = "/etc/init.d/sickbeard2 stop";
                 $this->exec($cmd);
-                $run2 = $xmlConfig->get("//services/sickbeard/newinstenable");
+                // $run2 = $xmlConfig->get("//services/sickbeard/newinstenable");
             }
 
             // Get the Sickbeard module
@@ -633,18 +633,12 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 $this->exec($cmd, $output, $bgOutputFilename);
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
                 $sickbeardModule->startService();
-                if ($run2 == "1") {
-                    $cmd = "/etc/init.d/sickbeard2 start";
-                    $this->exec($cmd);
-                }
+                $this->exec("omv-mkconf sickbeard");
                 exit(0);
             } catch (Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
                 $sickbeardModule->startService();
-                if ($run2 == "1") {
-                    $cmd = "/etc/init.d/sickbeard2 start";
-                    $this->exec($cmd);
-                }
+                $this->exec("omv-mkconf sickbeard");
                 exit(1);
             }
         } else {
