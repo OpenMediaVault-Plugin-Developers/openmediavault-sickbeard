@@ -19,10 +19,6 @@ OMV_SICKBEARD_USER=${CP_USER-sickbeard}
 OMV_SICKBEARD_GROUP=${CP_GROUP-users}
 OMV_SICKBEARD_XPATH="/config/services/sickbeard"
 
-
-
-repo2="$(omv_config_get "//services/sickbeard/repo2")"
-branch2="$(omv_config_get "//services/sickbeard/branch2")"
 newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
 newinstenable="$(omv_config_get "//services/sickbeard/newinstenable")"
 ppass="$(omv_config_get "//services/sickbeard/ppass")"
@@ -87,14 +83,14 @@ if [ ! -e $OMV_SICKBEARD1_APP_PATH ]; then
 fi
 
 # If $OMV_SICKBEARD1_APP_PATH exists and is not empty fetch current repo and branch.
-if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
+if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
     if [ ! -f "${OMV_SICKBEARD1_APP_PATH}SickBeard.py" ]; then
-	    find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
-		if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
+        find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
+        if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
             switch_repo $repo $branch
-			exit 0
+            exit 0
         fi
-	fi
+    fi
 
     if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
         cd $OMV_SICKBEARD1_APP_PATH
@@ -115,121 +111,180 @@ if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
         find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
         switch_repo $repo $branch
     fi
-else
-    if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-        switch_repo $repo $branch
-    fi
 fi
 
 if [ "${newinstance}" = "1" ]; then
     if  [ ! -f /etc/init.d/sickbeard2 ]; then
-        cat <<EOF > /etc/init.d/sickbeard2
-#! /bin/sh
-
+        cat > /etc/init.d/sickbeard2 <<'EOF'
+#!/bin/sh
+#
 ### BEGIN INIT INFO
-# Provides:          sb2
-# Required-Start:    \$local_fs \$network \$remote_fs
-# Required-Stop:     \$local_fs \$network \$remote_fs
-# Should-Start:      \$NetworkManager
-# Should-Stop:       \$NetworkManager
+# Provides:          sickbeard2
+# Required-Start:    $local_fs $network $remote_fs
+# Required-Stop:     $local_fs $network $remote_fs
+# Should-Start:      $NetworkManager
+# Should-Stop:       $NetworkManager
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: starts instance of Sb2
-# Description:       starts instance of Sb2 using start-stop-daemon
+# Short-Description: starts instance of SickBeard2
+# Description:       starts instance of SickBeard2 using start-stop-daemon
 ### END INIT INFO
 
-set -e
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
 
-############### BEGIN EDIT ME ################
-RUN_AS=sickbeard
-RUN_GRP=users
-APP_PATH=/opt/sickbeard2
-DAEMON=/usr/bin/python
-PID_FILE=/var/run/sickbeard/sickbeard2.pid
-PID_PATH=\$(dirname \$PID_FILE)
-NAME=sickbeard
-DESC=sickbeard
-DATA_DIR=/home/sickbeard/.sickbeard2
-EXTRA_DAEMON_OPTS=" --config=\${DATA_DIR}/config.ini"
-DAEMON_OPTS=" \${APP_PATH}/SickBeard.py -q --daemon --nolaunch --pidfile=\${PID_FILE} --datadir=\${DATA_DIR} \${EXTRA_DAEMON_OPTS}"
-############### END EDIT ME ##################
-
-# Get lsb functions
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
 . /lib/lsb/init-functions
 
-# Create PID directory if not exist and ensure the Sickbeard user can write to it
-if [ ! -d \$PID_PATH ]; then
-    mkdir -p \$PID_PATH
-    chown \$RUN_AS \$PID_PATH
+# Source SickBeard configuration
+if [ -f /etc/default/sickbeard2 ]; then
+    . /etc/default/sickbeard2
+else
+    [ "${VERBOSE}" != no ] && echo "/etc/default/sickbeard not found. Using default settings.";
 fi
 
-if [ -e \$PID_FILE ]; then
-    PID=\`cat \$PID_FILE\`
-    if ! kill -0 \$PID > /dev/null 2>&1; then
-        echo "Removing stale \$PID_FILE"
-        rm \$PID_FILE
+## Don't set -e
+## Don't edit this file!
+## Edit user configuation in /etc/default/sickbeard to change
+##
+## SB_USER=         #$RUN_AS, username to run sickbeard under, the default is sickbeard
+## SB_GROUP=        #$RUN_GROUP, group to run sickbeard under, the default is sickbeard
+## SB_HOME=         #$APP_PATH, the location of SickBeard.py, the default is /opt/sickbeard2
+## SB_DATA=         #$DATA_DIR, the location of sickbeard.db, cache, logs, the default is /opt/sickbeard2
+## SB_PIDFILE=      #$PID_FILE, the location of sickbeard.pid, the default is /var/run/sickbeard/sickbeard2.pid
+## PYTHON_BIN=      #$DAEMON, the location of the python binary, the default is /usr/bin/python
+## SB_OPTS=         #$EXTRA_DAEMON_OPTS, extra cli option for sickbeard, i.e. " --config=/home/sickbeard/config.ini"
+## SSD_OPTS=        #$EXTRA_SSD_OPTS, extra start-stop-daemon option like " --group=users"
+##
+## EXAMPLE if want to run as different user
+## add SB_USER=username to /etc/default/sickbeard2
+## otherwise default sickbeard is used
+
+# Script name
+NAME=$(basename "$0")
+
+# App name
+DESC=SickBeard
+
+## The defaults
+# Run as username
+RUN_AS=${SB_USER-sickbeard}
+
+# Run as group
+RUN_GROUP=${SB_GROUP-users}
+
+# Path to app SB_HOME=path_to_app_SickBeard.py
+APP_PATH=${SB_HOME-/opt/sickbeard2}
+
+# Data directory where sickbeard.db, cache and logs are stored
+DATA_DIR=${SB_DATA-/var/opt/sickbeard2}
+
+# Path to store PID file
+PID_FILE=${SB_PIDFILE-/var/run/sickbeard/sickbeard2.pid}
+
+# path to python bin
+DAEMON=${PYTHON_BIN-/usr/bin/python}
+
+# Extra daemon option like: SB_OPTS=" --config=/home/sickbeard/config.ini"
+EXTRA_DAEMON_OPTS=${SB_OPTS- --config=/var/opt/sickbeard2/config.ini}
+
+# Extra start-stop-daemon option like START_OPTS=" --group=users"
+EXTRA_SSD_OPTS=${SSD_OPTS- --group=users}
+##
+
+PID_PATH=$(dirname $PID_FILE)
+DAEMON_OPTS=" SickBeard.py -q --daemon --nolaunch --pidfile=${PID_FILE} --datadir=${DATA_DIR} ${EXTRA_DAEMON_OPTS}"
+
+##
+
+test -x $DAEMON || exit 0
+
+# Create PID directory if not exist and ensure the SickBeard user can write to it
+if [ ! -d $PID_PATH ]; then
+    mkdir -p $PID_PATH
+    chown $RUN_AS $PID_PATH
+fi
+
+if [ ! -d $DATA_DIR ]; then
+    mkdir -p $DATA_DIR
+    chown $RUN_AS $DATA_DIR
+fi
+
+if [ -e $PID_FILE ]; then
+    PID=`cat $PID_FILE`
+    if ! kill -0 $PID > /dev/null 2>&1; then
+        [ "$VERBOSE" != no ] && echo "Removing stale $PID_FILE"
+        rm -f $PID_FILE
     fi
 fi
 
-chown \$RUN_AS \$PID_PATH
-
-is_running() {
-  if [ ! -e \$PID_FILE ]; then
-    return 1
-  fi
-  return 0
+start_sickbeard() {
+    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+    start-stop-daemon -d $APP_PATH -c $RUN_AS --group=${RUN_GROUP} $EXTRA_SSD_OPTS --start --quiet --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS
+    RETVAL="$?"
+    case "${RETVAL}" in
+        # Service was started or was running already
+        0|1) [ "${VERBOSE}" != no ] && log_end_msg 0 ;;
+        # Service couldn't be started
+        2) [ "${VERBOSE}" != no ] && log_end_msg 1 ;;
+    esac
+    [ "${RETVAL}" = 2 ] && return 2
+    return 0
 }
 
-start() {
-  if ! is_running; then
-    echo "Starting \$DESC"
-    start-stop-daemon -d \$APP_PATH -c \$RUN_AS --start --pidfile \$PID_FILE --exec \$DAEMON -- \$DAEMON_OPTS > /dev/null 2>&1
-    #sudo -u \$RUN_AS \$DAEMON \$DAEMON_OPTS &> /dev/null 2>&1
-  else
-    echo "\$DESC is running"
-  fi
+stop_sickbeard() {
+    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+    start-stop-daemon --stop --pidfile $PID_FILE --quiet --retry TERM/30/KILL/5
+    RETVAL="$?"
+    case "${RETVAL}" in
+        # Service was stopped or wasn't running
+        0|1) [ "${VERBOSE}" != no ] && log_end_msg 0 ;;
+        # Service couldn't be stopped
+        2) [ "${VERBOSE}" != no ] && log_end_msg 1 ;;
+    esac
+    [ "${RETVAL}" = 2 ] && return 2
+    [ -f "${PID_FILE}" ] && rm -f ${PID_FILE}
+    return 0
 }
 
-stop() {
-  if is_running; then
-    echo "Stopping \$DESC"
-    start-stop-daemon --stop --pidfile \$PID_FILE --retry 15
-  fi
-}
+case "$1" in
+    start)
+        start_sickbeard
+        exit $?
+        ;;
+    stop)
+        stop_sickbeard
+        exit $?
+        ;;
 
-restart() {
-  if is_running; then
-    stop
-  fi
-  echo "Restarting \$DESC"
-  start
-}
-
-case "\$1" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  restart)
-    stop
-    start
-    ;;
-  status)
-    status_of_proc -p \$PID_FILE "\$DAEMON" "\$NAME"
-    ;;
-  *)
-    echo "Usage: \$0 {start|stop|restart|uninstall}"
+    restart|force-reload)
+        stop_sickbeard
+        sleep 2
+        start_sickbeard
+        return $?
+        ;;
+    status)
+        status_of_proc -p "$PID_FILE" "$DAEMON" "$DESC"
+        exit 0
+        ;;
+    *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
 esac
+exit 0
 EOF
         chmod +x /etc/init.d/sickbeard2
         insserv -d sickbeard2
     fi
     if [ "${newinstenable}" = "1" ]; then
+        repo2="$(omv_config_get "//services/sickbeard/repo2")"
+        branch2="$(omv_config_get "//services/sickbeard/branch2")"
         if [ ! -d $OMV_SICKBEARD2_APP_PATH ]; then
             cd /home
-            su -s /bin/sh -c "git clone $repo -b $branch $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD_USER
+            su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD_USER > /dev/null 2>&1
             # Can not create dir as user so create it then change ownership.
             mkdir -p $OMV_SICKBEARD2_DATA_PATH
             chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH
@@ -406,4 +461,5 @@ else
     fi
 fi
 exit
+
 

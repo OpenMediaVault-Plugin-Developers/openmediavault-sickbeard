@@ -5,30 +5,30 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-OMV_SICKBEARD_APP_PATH="/opt/sickbeard/"
-OMV_SICKBEARD_DATA_PATH="/var/opt/sickbeard"
-OMV_SICKBEARD_APP_PATH2="/opt/sickbeard2/"
-OMV_SICKBEARD_DATA_PATH2="/var/opt/sickbeard2"
+OMV_SICKBEARD1_APP_PATH="/opt/sickbeard/"
+OMV_SICKBEARD1_DATA_PATH="/var/opt/sickbeard"
+OMV_SICKBEARD2_APP_PATH="/opt/sickbeard2/"
+OMV_SICKBEARD2_DATA_PATH="/var/opt/sickbeard2"
 OMV_SICKBEARD_XPATH="/config/services/sickbeard"
 
 case "$1" in
     purge)
         omv_config_delete OMV_SICKBEARD_XPATH
 
-        if [ -d $OMV_SICKBEARD_APP_PATH ]; then
-            find $OMV_SICKBEARD_APP_PATH -mindepth 1 -delete
+        if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
+            find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
         fi
 
-        if [ -d $OMV_SICKBEARD_APP_PATH2 ]; then
-            find $OMV_SICKBEARD_APP_PATH2 -mindepth 1 -delete
+        if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
+            find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
         fi
 
-        if [ -d $OMV_SICKBEARD_DATA_PATH ]; then
-            find $OMV_SICKBEARD_DATA_PATH -mindepth 1 -delete
+        if [ -d $OMV_SICKBEARD1_DATA_PATH ]; then
+            find $OMV_SICKBEARD1_DATA_PATH -mindepth 1 -delete
         fi
 
-        if [ -d $OMV_SICKBEARD_DATA_PATH2 ]; then
-            find $OMV_SICKBEARD_DATA_PATH2 -mindepth 1 -delete
+        if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
+            find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
         fi
 
 
@@ -58,6 +58,8 @@ case "$1" in
         rm -Rf /var/run/sickbeard & >/dev/null
         rm -Rf /opt/sickbeard & >/dev/null
         rm -Rf /opt/sickbeard2 & >/dev/null
+        rm -Rf /var/opt/sickbeard & >/dev/null
+        rm -Rf /var/opt/sickbeard2 & >/dev/null
 
         omv_config_delete "//services/sickbeard"
 
