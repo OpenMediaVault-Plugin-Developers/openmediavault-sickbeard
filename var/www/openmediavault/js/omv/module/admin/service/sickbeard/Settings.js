@@ -81,7 +81,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
         items.push({
             id: this.getId() + "-show",
             xtype: "button",
-            text: _("SB Web Client"),
+            text: _("Open Web Client"),
             icon: "images/sickbeard.png",
             iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
             scope: this,
