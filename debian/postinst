@@ -5,7 +5,7 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-OMV_SICKBEARD_APP_PATH="/opt/sickbeard"
+OMV_SICKBEARD1_APP_PATH="/opt/sickbeard"
 OMV_SICKBEARD1_OLD_DATA_PATH="/home/sickbeard/.sickbeard"
 OMV_SICKBEARD2_OLD_DATA_PATH="/home/sickbeard/.sickbeard2"
 OMV_SICKBEARD1_DATA_PATH="/var/opt/sickbeard"
