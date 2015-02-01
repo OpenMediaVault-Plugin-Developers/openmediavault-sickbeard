@@ -94,18 +94,18 @@ fi
 case "$1" in
     start)
         echo "Starting $DESC"
-        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS
+        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
         ;;
 
     stop)
         echo "Stopping $DESC"
-        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo
+        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo > /dev/null 2>&1
         ;;
 
     restart|force-reload)
         echo "Restarting $DESC"
-        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo
-        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS
+        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo > /dev/null 2>&1
+        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
         ;;
 
     status)

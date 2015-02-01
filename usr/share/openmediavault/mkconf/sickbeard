@@ -99,12 +99,10 @@ if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
 
         if [ $repo != $current_repo ]; then
             switch_repo $repo $branch
-            exit 0
         fi
 
         if [ $branch != $current_branch ]; then
             switch_branch $branch
-            exit 0
         fi
     else
         find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
@@ -129,49 +127,37 @@ if [ "${newinstance}" = "1" ]; then
 # Description:       starts instance of SickBeard2 using start-stop-daemon
 ### END INIT INFO
 
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
-
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
-
 # Source SickBeard configuration
-if [ -f /etc/default/sickbeard2 ]; then
-    . /etc/default/sickbeard2
+if [ -f /etc/default/sickbeard ]; then
+    . /etc/default/sickbeard
 else
-    [ "${VERBOSE}" != no ] && echo "/etc/default/sickbeard not found. Using default settings.";
+    echo "/etc/default/sickbeard not found using default settings.";
 fi
 
-## Don't set -e
-## Don't edit this file!
+# Script name
+NAME=sickbeard2
+
+# App name
+DESC=SickBeard2
+
+## Don't edit this file
 ## Edit user configuation in /etc/default/sickbeard to change
 ##
 ## SB_USER=         #$RUN_AS, username to run sickbeard under, the default is sickbeard
-## SB_GROUP=        #$RUN_GROUP, group to run sickbeard under, the default is sickbeard
-## SB_HOME=         #$APP_PATH, the location of SickBeard.py, the default is /opt/sickbeard2
-## SB_DATA=         #$DATA_DIR, the location of sickbeard.db, cache, logs, the default is /opt/sickbeard2
-## SB_PIDFILE=      #$PID_FILE, the location of sickbeard.pid, the default is /var/run/sickbeard/sickbeard2.pid
+## SB_HOME=         #$APP_PATH, the location of SickBeard.py, the default is /opt/sickbeard
+## SB_DATA=         #$DATA_DIR, the location of sickbeard.db, cache, logs, the default is /opt/sickbeard
+## SB_PIDFILE=      #$PID_FILE, the location of sickbeard.pid, the default is /var/run/sickbeard/sickbeard.pid
 ## PYTHON_BIN=      #$DAEMON, the location of the python binary, the default is /usr/bin/python
 ## SB_OPTS=         #$EXTRA_DAEMON_OPTS, extra cli option for sickbeard, i.e. " --config=/home/sickbeard/config.ini"
 ## SSD_OPTS=        #$EXTRA_SSD_OPTS, extra start-stop-daemon option like " --group=users"
 ##
 ## EXAMPLE if want to run as different user
-## add SB_USER=username to /etc/default/sickbeard2
+## add SB_USER=username to /etc/default/sickbeard
 ## otherwise default sickbeard is used
-
-# Script name
-NAME=$(basename "$0")
-
-# App name
-DESC=SickBeard
 
 ## The defaults
 # Run as username
 RUN_AS=${SB_USER-sickbeard}
-
-# Run as group
-RUN_GROUP=${SB_GROUP-users}
 
 # Path to app SB_HOME=path_to_app_SickBeard.py
 APP_PATH=${SB_HOME-/opt/sickbeard2}
@@ -192,12 +178,14 @@ EXTRA_DAEMON_OPTS=${SB_OPTS- --config=/var/opt/sickbeard2/config.ini}
 EXTRA_SSD_OPTS=${SSD_OPTS- --group=users}
 ##
 
-PID_PATH=$(dirname $PID_FILE)
+PID_PATH=`dirname $PID_FILE`
 DAEMON_OPTS=" SickBeard.py -q --daemon --nolaunch --pidfile=${PID_FILE} --datadir=${DATA_DIR} ${EXTRA_DAEMON_OPTS}"
 
 ##
 
 test -x $DAEMON || exit 0
+
+set -e
 
 # Create PID directory if not exist and ensure the SickBeard user can write to it
 if [ ! -d $PID_PATH ]; then
@@ -213,67 +201,64 @@ fi
 if [ -e $PID_FILE ]; then
     PID=`cat $PID_FILE`
     if ! kill -0 $PID > /dev/null 2>&1; then
-        [ "$VERBOSE" != no ] && echo "Removing stale $PID_FILE"
-        rm -f $PID_FILE
+        echo "Removing stale $PID_FILE"
+        rm $PID_FILE
     fi
 fi
 
-start_sickbeard() {
-    [ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
-    start-stop-daemon -d $APP_PATH -c $RUN_AS --group=${RUN_GROUP} $EXTRA_SSD_OPTS --start --quiet --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS
-    RETVAL="$?"
-    case "${RETVAL}" in
-        # Service was started or was running already
-        0|1) [ "${VERBOSE}" != no ] && log_end_msg 0 ;;
-        # Service couldn't be started
-        2) [ "${VERBOSE}" != no ] && log_end_msg 1 ;;
-    esac
-    [ "${RETVAL}" = 2 ] && return 2
-    return 0
-}
-
-stop_sickbeard() {
-    [ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
-    start-stop-daemon --stop --pidfile $PID_FILE --quiet --retry TERM/30/KILL/5
-    RETVAL="$?"
-    case "${RETVAL}" in
-        # Service was stopped or wasn't running
-        0|1) [ "${VERBOSE}" != no ] && log_end_msg 0 ;;
-        # Service couldn't be stopped
-        2) [ "${VERBOSE}" != no ] && log_end_msg 1 ;;
-    esac
-    [ "${RETVAL}" = 2 ] && return 2
-    [ -f "${PID_FILE}" ] && rm -f ${PID_FILE}
-    return 0
-}
-
 case "$1" in
     start)
-        start_sickbeard
-        exit $?
+        echo "Starting $DESC"
+        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
         ;;
+
     stop)
-        stop_sickbeard
-        exit $?
+        echo "Stopping $DESC"
+        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo > /dev/null 2>&1
         ;;
 
     restart|force-reload)
-        stop_sickbeard
-        sleep 2
-        start_sickbeard
-        return $?
+        echo "Restarting $DESC"
+        start-stop-daemon --stop --pidfile $PID_FILE --retry 15 --oknodo > /dev/null 2>&1
+        start-stop-daemon -d $APP_PATH -c $RUN_AS $EXTRA_SSD_OPTS --start --pidfile $PID_FILE --exec $DAEMON -- $DAEMON_OPTS > /dev/null 2>&1
         ;;
+
     status)
-        status_of_proc -p "$PID_FILE" "$DAEMON" "$DESC"
-        exit 0
+        # Use LSB function library if it exists
+        if [ -f /lib/lsb/init-functions ]; then
+            . /lib/lsb/init-functions
+
+            if [ -e $PID_FILE ]; then
+                status_of_proc -p $PID_FILE "$DAEMON" "$NAME" && exit 0 || exit $?
+            else
+                log_daemon_msg "$NAME is not running"
+                exit 3
+            fi
+
+        else
+        # Use basic functions
+            if [ -e $PID_FILE ]; then
+                PID=`cat $PID_FILE`
+                if kill -0 $PID > /dev/null 2>&1; then
+                    echo " * $NAME is running"
+                    exit 0
+                fi
+            else
+                echo " * $NAME is not running"
+                exit 3
+            fi
+        fi
         ;;
+
     *)
         N=/etc/init.d/$NAME
-        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        echo "Usage: $N {start|stop|restart|force-reload|status}" >&2
         exit 1
         ;;
 esac
+
 exit 0
+
 EOF
         chmod +x /etc/init.d/sickbeard2
         insserv -d sickbeard2
@@ -459,6 +444,7 @@ else
         fi
     fi
 fi
-exit
+
+exit 0
 
 

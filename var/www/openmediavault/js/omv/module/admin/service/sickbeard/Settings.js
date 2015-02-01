@@ -86,9 +86,13 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
             iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
             scope: this,
             handler: function() {
-                var port = this.getForm().findField("port").getValue();
-                var link = "http://" + location.hostname + ":" + port + "/";
-
+                var proxy = this.getForm().findField("ppass").getValue();
+                if (proxy == true) {
+                    var link = "http://" + location.hostname + "/sickbeard/home/";
+                } else {
+                    var port = this.getForm().findField("port").getValue();
+                    var link = "http://" + location.hostname + ":" + port + "/home/";
+                }
                 window.open(link, "_blank");
             }
         }, {

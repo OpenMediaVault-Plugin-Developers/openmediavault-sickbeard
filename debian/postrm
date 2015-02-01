@@ -33,21 +33,23 @@ case "$1" in
 
 
         if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
-            PID=`cat /var/run/sickbeard/sickbeard.pid`
-            kill -0 $PID 2>/dev/null;
+            start-stop-daemon --stop --pidfile /var/run/sickbeard/sickbeard.pid --retry 15 --oknodo > /dev/null 2>&1
+        #    PID=`cat /var/run/sickbeard/sickbeard.pid`
+        #    kill -0 $PID 2>/dev/null;
 
-            if [ $? -eq 0 ]; then
-                kill -9 $PID;
-            fi
+        #    if [ $? -eq 0 ]; then
+        #        kill -9 $PID;
+        #    fi
         fi
 
         if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
-            PID=`cat /var/run/sickbeard/sickbeard2.pid`;
-            kill -0 $PID 2>/dev/null;
+            start-stop-daemon --stop --pidfile /var/run/sickbeard/sickbeard2.pid --retry 15 --oknodo > /dev/null 2>&1
+        #    PID=`cat /var/run/sickbeard/sickbeard2.pid`;
+        #    kill -0 $PID 2>/dev/null;
 
-            if [ $? -eq 0 ]; then
-                kill -9 $PID;
-            fi
+        #    if [ $? -eq 0 ]; then
+        #        kill -9 $PID;
+        #    fi
         fi
 
         if [ -f "/etc/init.d/sickbeard2" ]; then
@@ -76,7 +78,9 @@ case "$1" in
             rm -Rf /opt/sickbeard2/.gitignore & >/dev/null
         fi
 
-        userdel -rf sickbeard
+        if getent passwd sickbeard >/dev/null 2>&1; then
+            userdel -rf sickbeard
+        fi
 
         if [ ! -d /opt ]; then
             mkdir /opt

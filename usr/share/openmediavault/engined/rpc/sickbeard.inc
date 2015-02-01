@@ -516,8 +516,19 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             return $bgStatusFilename;
         }
 
+        // Stop service before backup.
+        if (file_exists($this->sickbeard2SettingsFile)) {
+            $cmd = "/etc/init.d/sickbeard2 stop";
+            $this->exec($cmd);
+        }
+
+        // Get the Sickbeard module
+        $moduleMgr = &OMVModuleMgr::getInstance();
+        $sickbeardModule = $moduleMgr->getModule($this->getName());
+
         // Child process.
         try {
+            $sickbeardModule->stopService();
             $bgOutputFilename = $this->createBgProcOutput();
             $this->updateBgProcStatus(
                 $bgStatusFilename,
@@ -548,8 +559,10 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
             $this->exec($cmd, $output, $bgOutputFilename);
             $this->finalizeBgProcStatus($bgStatusFilename, $output);
+            $sickbeardModule->startService();
             exit(0);
         } catch (Exception $e) {
+            $sickbeardModule->startService();
             $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
             exit(1);
         }
@@ -611,7 +624,6 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 rmdir($this->sickbeard2SettingsDir);
                 $cmd = "/etc/init.d/sickbeard2 stop";
                 $this->exec($cmd);
-                // $run2 = $xmlConfig->get("//services/sickbeard/newinstenable");
             }
 
             // Get the Sickbeard module
@@ -633,11 +645,9 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 $this->exec($cmd, $output, $bgOutputFilename);
                 $this->finalizeBgProcStatus($bgStatusFilename, $output);
                 $sickbeardModule->startService();
-                $this->exec("omv-mkconf sickbeard");
                 exit(0);
             } catch (Exception $e) {
                 $this->finalizeBgProcStatus($bgStatusFilename, "", $e);
-                $sickbeardModule->startService();
                 $this->exec("omv-mkconf sickbeard");
                 exit(1);
             }
