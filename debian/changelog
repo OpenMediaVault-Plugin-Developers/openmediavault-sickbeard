@@ -1,23 +1,13 @@
-openmediavault-sickbeard (1.0.5) unstable; urgency=low
-
-  [ cptjhmiller ]
-  * Untested changes2
-  * try to fix mkconf script
-
-  [ Aaron Murray ]
-  * Fix typo
-  * potential fix?
-
-  [ root ]
-
- -- root <root@localhost.localdomain>  Fri, 30 Jan 2015 18:54:32 +0000
-
 openmediavault-sickbeard (1.0.4) unstable; urgency=low
 
+  * Untested changes2
+  * try to fix mkconf script
+  * Fix typo
+  * potential fix?
   * Use init scripts provided by sickbeard
   * Make the user sickbeard a system user
 
- -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Thu, 22 Jan 2015 01:20:02 +0000
+ -- root <root@localhost.localdomain>  Fri, 30 Jan 2015 18:54:32 +0000
 
 openmediavault-sickbeard (1.0.3) unstable; urgency=low
 
