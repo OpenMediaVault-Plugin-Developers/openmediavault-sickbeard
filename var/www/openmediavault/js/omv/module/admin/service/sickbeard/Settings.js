@@ -64,15 +64,13 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
             properties : "!show" 
         },{ 
             name       : [ 
-                "newinstenable", 
-                "repo2", 
-                "branch2", 
+                "newinstenable",
             ], 
             conditions : [ 
-                { name  : "newinstance", value : false } 
-            ], 
-            properties : "!show" 
-        }] 
+                { name  : "newinstance", value : false }
+            ],
+            properties : "!show"
+        }]
     }],
 
     getButtonItems: function() {
@@ -315,28 +313,6 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 }]
             }]
         }];
-    },
-
-    updateBranchCombo : function(values) {
-        var branchCombo = this.findField("branch");
-
-        branchCombo.store.removeAll();
-
-        for (var i = 0; i < values.length; i++) {
-            // TODO: Look over use of field1
-            branchCombo.store.add({ field1: values[i] });
-        }
-    },
-
-    updateBranchCombo2 : function(values) {
-        var branchCombo2 = this.findField("branch2");
-
-        branchCombo2.store.removeAll();
-
-        for (var i = 0; i < values.length; i++) {
-            // TODO: Look over use of field1
-            branchCombo2.store.add({ field1: values[i] });
-        }
     }
 });
 

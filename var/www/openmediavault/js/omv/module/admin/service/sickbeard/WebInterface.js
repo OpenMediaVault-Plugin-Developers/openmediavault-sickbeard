@@ -29,7 +29,7 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
                 if (proxy == true) {
                     var link = "http://" + window.location.hostname + "/sickbeard/home/";
                 } else {
-                var link = "http://" + window.location.hostname + ":" + response.port + "/home/";
+                    var link = "http://" + window.location.hostname + ":" + response.port + "/home/";
 				}
                 this.html = "<iframe src='" + link + "' sandbox='allow-same-origin allow-forms allow-scripts' width='100%' height='100%' />";
             },

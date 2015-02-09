@@ -407,7 +407,7 @@ EOF
     if [ "${newinstance}" = "1" ]; then
         cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
 location /sickbeard2 {
-        proxy_pass        http://localhost:8082/sickbeard2;
+        proxy_pass        http://localhost:8082/sickbeard;
         proxy_set_header  Host localhost:8082;
         proxy_redirect    default;
 }

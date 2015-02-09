@@ -187,6 +187,15 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                 );
             }
         }
+
+        if ($params["showtab"] == true && $params["ppass"] != true) {
+            if (! file_exists("/var/www/openmediavault/js/omv/module/admin/service/media/Media.js'));
+                throw new OMVException(
+                    OMVErrorMsg::E_MISC_FAILURE,
+                    "Install links and add an entry or enable Proxy Pass to use the web tab."
+                );
+            }
+        }
         //Checks finished.
 
         $object = array(
