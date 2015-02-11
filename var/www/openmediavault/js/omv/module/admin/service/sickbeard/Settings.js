@@ -65,6 +65,8 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
         },{ 
             name       : [ 
                 "newinstenable",
+                "branch2",
+                "repo2",
             ], 
             conditions : [ 
                 { name  : "newinstance", value : false }
@@ -313,6 +315,30 @@ Ext.define("OMV.module.admin.service.sickbeard.Settings", {
                 }]
             }]
         }];
+    },
+
+    updateBranchCombo : function(values) {
+        var me = this;
+        var branchCombo = me.findField("branch");
+
+        branchCombo.store.removeAll();
+
+        for (var i = 0; i < values.length; i++) {
+            // TODO: Look over use of field1
+            branchCombo.store.add({ field1: values[i] });
+        }
+    },
+
+    updateBranchCombo2 : function(values) {
+        var me = this;
+        var branchCombo2 = me.findField("branch2");
+
+        branchCombo2.store.removeAll();
+
+        for (var i = 0; i < values.length; i++) {
+            // TODO: Look over use of field1
+            branchCombo2.store.add({ field1: values[i] });
+        }
     }
 });
 

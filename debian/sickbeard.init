@@ -15,8 +15,6 @@
 # Source SickBeard configuration
 if [ -f /etc/default/sickbeard ]; then
     . /etc/default/sickbeard
-else
-    echo "/etc/default/sickbeard not found using default settings.";
 fi
 
 # Script name

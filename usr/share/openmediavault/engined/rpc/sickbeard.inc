@@ -168,35 +168,34 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
         if ($params["ssl"] == "1") {
             if ($params["ppass"] == "1") {
                 throw new OMVException(
-                    OMVErrorMsg::E_EXEC_MISC,
+                    OMVErrorMsg::E_MISC_FAILURE,
                     "You can not enable both SSL and Proxy Pass."
                 );
             }
             $xSsl = $xmlConfig->get("//webadmin/enablessl");
             if ($xSsl == "1") {
                 throw new OMVException(
-                    OMVErrorMsg::E_EXEC_MISC,
+                    OMVErrorMsg::E_MISC_FAILURE,
                     "You have SSL enabled for the main UI, Do NOT enable it here as well."
                 );
             }
             $ySsl = $xmlConfig->get("//system/certificates/sslcertificate/uuid");
             if ($ySsl == "") {
                 throw new OMVException(
-                    OMVErrorMsg::E_EXEC_MISC,
+                    OMVErrorMsg::E_MISC_FAILURE,
                     "You have not generated any SSL certificates."
                 );
             }
         }
 
-        if ($params["showtab"] == true && $params["ppass"] != true) {
-            if (! file_exists("/var/www/openmediavault/js/omv/module/admin/service/media/Media.js'));
+        if ($params["showtab"] == 1 && $params["ppass"] != 1) {
+            if (! file_exists('/var/www/openmediavault/js/omv/module/admin/service/media/Media.js')) {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "Install links and add an entry or enable Proxy Pass to use the web tab."
                 );
             }
         }
-        //Checks finished.
 
         $object = array(
             "enable"        => array_boolval($params, "enable"),
