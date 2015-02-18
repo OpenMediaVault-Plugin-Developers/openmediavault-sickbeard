@@ -64,7 +64,7 @@ switch_branch()
 {
     local branch=$1
 
-    cd /home
+    cd $OMV_SICKBEARD1_APP_PATH
     su -s /bin/sh -c "git reset --hard" $OMV_SICKBEARD_USER
     su -s /bin/sh -c "git checkout $branch" $OMV_SICKBEARD_USER
 }
@@ -72,9 +72,9 @@ switch_branch()
 repo="$(omv_config_get "//services/sickbeard/repo")"
 branch="$(omv_config_get "//services/sickbeard/branch")"
 
-# If $OMV_SICKBEARD1_APP_PATH does not exists
-# must be first clone
-if [ ! -e $OMV_SICKBEARD1_APP_PATH ]; then
+# If $OMV_SICKBEARD1_APP_PATH does not exist it must be first clone.
+if [ ! -f "${OMV_SICKBEARD1_APP_PATH}SickBeard.py" ]; then
+    find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
     if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
         switch_repo $repo $branch
     fi
