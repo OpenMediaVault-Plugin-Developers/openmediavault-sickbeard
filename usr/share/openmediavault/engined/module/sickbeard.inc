@@ -116,7 +116,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             $initd->exec();
         }
 
-        if (!boolval($object["newinstenable"])) {
+        if (!boolval($object["newinstance"]) && !boolval($object["newinstenable"])) {
             return;
         }
 
