@@ -1,3 +1,21 @@
+openmediavault-sickbeard (1.0.6) unstable; urgency=low
+
+  [ cptjhmiller ]
+  * Add check for links and small fixes
+  * 	modified:   debian/sickbeard.init 	modified:   usr/share/openmediavault/engined/rpc/sickbeard.inc 	modified:   usr/share/openmediavault/mkconf/sickbeard 	modified:   var/www/openmediavault/js/omv/module/admin/service/sickbeard/Settings.js
+  * Fix issues reported by David
+  * Revert some items
+
+  [ root ]
+
+ -- root <root@localhost.localdomain>  Wed, 18 Feb 2015 02:34:06 +0000
+
+openmediavault-sickbeard (1.0.5) unstable; urgency=low
+
+  * Fix issues reported by David
+
+ -- root <root@localhost.localdomain>  Wed, 18 Feb 2015 02:17:30 +0000
+
 openmediavault-sickbeard (1.0.4) unstable; urgency=low
 
   * Untested changes2

@@ -42,7 +42,7 @@ case "$1" in
         if [ -e $OMV_SICKBEARD1_OLD_DATA_PATH ]; then
             if [ ! -e $OMV_SICKBEARD1_DATA_PATH ]; then
                 cp -Ra $OMV_SICKBEARD1_OLD_DATA_PATH/* $OMV_SICKBEARD1_DATA_PATH
-			    #rm -Rf OMV_SICKBEARD1_OLD_DATA_PATH
+                #rm -Rf OMV_SICKBEARD1_OLD_DATA_PATH
             fi
         fi
 
