@@ -12,6 +12,16 @@
 # Description:       starts instance of Sick Beard using start-stop-daemon
 ### END INIT INFO
 
+# Space Check
+CHECK_SPACE=False
+if [ "$CHECK_SPACE" = "True" ]; then
+    SPACE=$(df /home/|tr -s ' ' |cut -d' ' -f5|tail -n1 | cut -d'%' -f1)
+    #SPACE=$(df / | awk '{ print $5 }' | tail -n 1 | cut -d'%' -f1)
+    if [ "$SPACE" -gt "98" ]; then
+        exit 0
+    fi
+fi
+
 # Source SickBeard configuration
 if [ -f /etc/default/sickbeard ]; then
     . /etc/default/sickbeard

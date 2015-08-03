@@ -131,6 +131,16 @@ if [ $newinstance = "1" ]; then
 # Description:       starts instance of SickBeard2 using start-stop-daemon
 ### END INIT INFO
 
+# Space Check
+CHECK_SPACE=False
+if [ "$CHECK_SPACE" = "True" ]; then
+    SPACE=$(df /home/|tr -s ' ' |cut -d' ' -f5|tail -n1 | cut -d'%' -f1)
+    #SPACE=$(df / | awk '{ print $5 }' | tail -n 1 | cut -d'%' -f1)
+    if [ "$SPACE" -gt "98" ]; then
+        exit 0
+    fi
+fi
+
 # Source SickBeard configuration
 if [ -f /etc/default/sickbeard2 ]; then
     . /etc/default/sickbeard2
@@ -269,7 +279,13 @@ EOF
         repo2="$(omv_config_get "//services/sickbeard/repo2")"
         branch2="$(omv_config_get "//services/sickbeard/branch2")"
         if [ ! -f "${OMV_SICKBEARD2_APP_PATH}SickBeard.py" ]; then
-            rm -Rf $OMV_SICKBEARD2_APP_PATH > /dev/null 2>&1
+            if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
+                find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
+            fi
+
+            if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
+                find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
+            fi
             cd /home
             su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD_USER > /dev/null 2>&1
             # Can not create dir as user so create it then change ownership.
@@ -335,9 +351,15 @@ else
         fi
 
         update-rc.d sickbeard2 disable > /dev/null 2>&1
-        rm -Rf $OMV_SICKBEARD2_DATA_PATH > /dev/null 2>&1
+        if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
+            find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
+        fi
+
+        if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
+            find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
+        fi
         rm -Rf /etc/init.d/sickbeard2 > /dev/null 2>&1
-        rm -Rf $OMV_SICKBEARD2_APP_PATH > /dev/null 2>&1
+
         newinstenable="0"
         xmlstarlet ed -L -u "//services/sickbeard/newinstenable" -v 0 -n $OMV_CONFIG_FILE
     fi
