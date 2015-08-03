@@ -1,3 +1,9 @@
+openmediavault-sickbeard (1.0.8) unstable; urgency=low
+
+  * Fix typo
+
+ -- root <root@localhost.localdomain>  Tue, 04 Aug 2015 00:48:06 +0000
+
 openmediavault-sickbeard (1.0.7) unstable; urgency=low
 
   * Fix permissions
