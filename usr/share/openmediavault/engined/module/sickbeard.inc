@@ -116,29 +116,29 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             $initd->exec();
         }
 
-        if (!boolval($object["newinstance"]) && !boolval($object["newinstenable"])) {
-            return;
+        if (boolval($object["newinstance"])) {
+
+            if ($object["branch2"] == "Please choose a branch") {
+                throw new OMVException(
+                    OMVErrorMsg::E_MISC_FAILURE,
+                    "Please select a 2nd repository and branch"
+                );
+                return;
+            }
+
+            if ($object["repo2"] == "Please choose a repository" ) {
+                throw new OMVException(
+                    OMVErrorMsg::E_MISC_FAILURE,
+                    "Please select a 2nd repository and branch"
+                );
+                return;
+            }
+
+            if  (boolval($object["newinstenable"])) {
+                $initd = new OMVSysVInitScript("sickbeard2", true);
+                $initd->exec();
+            }
         }
-
-        if ($object["branch2"] == "Please choose a branch") {
-            throw new OMVException(
-                OMVErrorMsg::E_MISC_FAILURE,
-                "Please select a 2nd repository and branch"
-            );
-            return;
-        }
-
-        if ($object["repo2"] == "Please choose a repository" ) {
-            throw new OMVException(
-                OMVErrorMsg::E_MISC_FAILURE,
-                "Please select a 2nd repository and branch"
-            );
-            return;
-        }
-
-        $initd = new OMVSysVInitScript("sickbeard2", true);
-        $initd->exec();
-
     }
 
     public function stopService()
