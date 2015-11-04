@@ -286,6 +286,15 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "master",
                     "merges"
                 )
+            ),
+            array(
+                "uuid" => "41111111-2222-3333-4444-555555555555",
+                "name" => "Main Branch4",
+                "fork" => "https://github.com/cytec/SickRage.git",
+                "branches" => array(
+                    "master",
+                    "develop"
+                )
             )
         );
 
