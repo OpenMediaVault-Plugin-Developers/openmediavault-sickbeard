@@ -107,9 +107,9 @@ EOF
             chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
         fi
 
-        if [ "$(omv_config_get "${SERVICE_XPATH}/enable")" = "1" ]; then
-            /etc/init.d/sickbeard start
-        fi
+        #if [ "$(omv_config_get "${SERVICE_XPATH}/enable")" = "1" ]; then
+        #    /etc/init.d/sickbeard start
+        #fi
 
         if [ "$(omv_config_get "${SERVICE_XPATH}/newinstenable")" = "1" ]; then
             /etc/init.d/sickbeard2 start
