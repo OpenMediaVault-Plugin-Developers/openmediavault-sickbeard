@@ -17,6 +17,11 @@ OMV_SICKBEARD_old="no"
 OMV_SICKBEARD1_Configuration="/etc/default/sickbeard"
 OMV_SICKBEARD2_Configuration="/etc/default/sickbeard2"
 
+lang=$(locale | grep CTYPE= | cut -d= -f2)
+if [ ${#lang} -lt 11 ]; then
+    lang="en_US.UTF-8"
+fi
+
 case "$1" in
     configure)
         SERVICE_XPATH_NAME="sickbeard"
@@ -35,7 +40,6 @@ case "$1" in
         fi
 
         if [ ! -f $OMV_SICKBEARD1_Configuration ]; then
-            lang=$(locale | grep LANG= | cut -d= -f2)
             cat > $OMV_SICKBEARD1_Configuration <<EOF
 SB_HOME=/opt/sickbeard/
 SB_DATA=/var/opt/sickbeard/
@@ -50,7 +54,6 @@ EOF
              fi
 
         if [ ! -f $OMV_SICKBEARD2_Configuration ]; then
-            lang=$(locale | grep LANG= | cut -d= -f2)
             cat > $OMV_SICKBEARD2_Configuration <<EOF
 #Created by the openmediavault-sickbeard plugin
 SB_HOME2=/opt/sickbeard2/
