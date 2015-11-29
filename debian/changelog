@@ -1,10 +1,16 @@
-openmediavault-sickbeard (1.0.11) unstable; urgency=low
+openmediavault-sickbeard (1.0.12) unstable; urgency=low
 
   * Fix moving of data folders
   * Fix UnicodeEncode error
   * Added Cytec SickRage Fork to default forks
   
  -- root <root@localhost.localdomain>  Sun, 29 Nov 2015 08:33:00 +0000
+
+openmediavault-sickbeard (1.0.11) stable; urgency=low
+
+  * Added Cytec SickRage Fork to default forks 
+
+ -- root <root@localhost.localdomain>  Wed, 16 Sep 2015 11:55:06 +0000
 
 openmediavault-sickbeard (1.0.10) stable; urgency=low
 
