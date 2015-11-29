@@ -1,3 +1,10 @@
+openmediavault-sickbeard (1.0.11) unstable; urgency=low
+
+  * Fix moving of data folders
+  * Fix UnicodeEncode error
+
+ -- root <root@localhost.localdomain>  Sun, 29 Nov 2015 08:33:00 +0000
+
 openmediavault-sickbeard (1.0.10) stable; urgency=low
 
   * Pushed to stable 

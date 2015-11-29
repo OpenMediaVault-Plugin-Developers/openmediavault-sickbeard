@@ -13,6 +13,9 @@ OMV_SICKBEARD1_DATA_PATH="/var/opt/sickbeard"
 OMV_SICKBEARD2_DATA_PATH="/var/opt/sickbeard2"
 OMV_SICKBEARD_USER="sickbeard"
 OMV_SICKBEARD_GROUP="users"
+OMV_SICKBEARD_old="no"
+OMV_SICKBEARD1_Configuration="/etc/default/sickbeard"
+OMV_SICKBEARD2_Configuration="/etc/default/sickbeard2"
 
 case "$1" in
     configure)
@@ -31,6 +34,54 @@ case "$1" in
             omv_config_add_element "${SERVICE_XPATH}" "show_tab" "0"
         fi
 
+        if [ ! -f $OMV_SICKBEARD1_Configuration ]; then
+            lang=$(locale | grep LANG= | cut -d= -f2)
+            cat > $OMV_SICKBEARD1_Configuration <<EOF
+SB_HOME=/opt/sickbeard/
+SB_DATA=/var/opt/sickbeard/
+SB_USER=sickbeard
+PYTHON_BIN=/usr/bin/python
+SB_OPTS=" --config=/var/opt/sickbeard/config.ini"
+SSD_OPTS=" --group=users"
+Environment=LC_ALL=$lang
+Environment=LANG=$lang
+
+EOF
+             fi
+
+        if [ ! -f $OMV_SICKBEARD2_Configuration ]; then
+            lang=$(locale | grep LANG= | cut -d= -f2)
+            cat > $OMV_SICKBEARD2_Configuration <<EOF
+#Created by the openmediavault-sickbeard plugin
+SB_HOME2=/opt/sickbeard2/
+SB_DATA2=/var/opt/sickbeard2/
+SB_USER=sickbeard
+PYTHON_BIN=/usr/bin/python
+SB_OPTS=" --config=/var/opt/sickbeard2/config.ini"
+SSD_OPTS=" --group=users"
+Environment=LC_ALL=$lang
+Environment=LANG=$lang
+
+EOF
+        fi
+
+        if [ -e $OMV_SICKBEARD1_OLD_DATA_PATH ]; then
+            if [ ! -e $OMV_SICKBEARD1_DATA_PATH ]; then
+                mv $OMV_SICKBEARD1_OLD_DATA_PATH $OMV_SICKBEARD1_DATA_PATH
+                OMV_SICKBEARD_old="yes"
+            fi
+        fi
+
+        if [ -e $OMV_SICKBEARD2_OLD_DATA_PATH ]; then
+            if [ ! -e $OMV_SICKBEARD2_DATA_PATH ]; then
+                mv $OMV_SICKBEARD2_OLD_DATA_PATH $OMV_SICKBEARD2_DATA_PATH
+            fi
+        fi
+
+        if [ "$OMV_SICKBEARD_old" = "yes" ] && getent passwd sickbeard >/dev/null 2>&1; then
+            userdel -rf sickbeard
+        fi
+
         if ! getent passwd sickbeard >/dev/null 2>&1; then
             adduser --quiet \
                     --system \
@@ -40,24 +91,29 @@ case "$1" in
                     $OMV_SICKBEARD_USER
         fi
 
-        if [ -e $OMV_SICKBEARD1_OLD_DATA_PATH ]; then
-            if [ ! -e $OMV_SICKBEARD1_DATA_PATH ]; then
-                cp -Ra $OMV_SICKBEARD1_OLD_DATA_PATH/* $OMV_SICKBEARD1_DATA_PATH
-                #rm -Rf OMV_SICKBEARD1_OLD_DATA_PATH
-            fi
+        if [ -e $OMV_SICKBEARD1_APP_PATH ]; then
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
         fi
 
-        if [ -e $OMV_SICKBEARD2_OLD_DATA_PATH ]; then
-            if [ ! -e $OMV_SICKBEARD2_DATA_PATH ]; then
-                cp -Ra $OMV_SICKBEARD2_OLD_DATA_PATH/* $OMV_SICKBEARD2_DATA_PATH
-            fi
+        if [ -e $OMV_SICKBEARD1_DATA_PATH ]; then
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_DATA_PATH -R
         fi
 
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_DATA_PATH -R
+        if [ -e $OMV_SICKBEARD2_APP_PATH ]; then
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_APP_PATH
+        fi
 
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_APP_PATH
-        chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
+        if [ -e $OMV_SICKBEARD2_DATA_PATH ]; then
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
+        fi
+
+        if [ "$(omv_config_get "${SERVICE_XPATH}/enable")" = "1" ]; then
+            /etc/init.d/sickbeard start
+        fi
+
+        if [ "$(omv_config_get "${SERVICE_XPATH}/newinstenable")" = "1" ]; then
+            /etc/init.d/sickbeard2 start
+        fi
 
         # Activate package triggers. These triggers are only set during the
         # package installation.

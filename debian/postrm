@@ -62,6 +62,8 @@ case "$1" in
         rm -Rf /opt/sickbeard2 & >/dev/null
         rm -Rf /var/opt/sickbeard & >/dev/null
         rm -Rf /var/opt/sickbeard2 & >/dev/null
+        rm -f /etc/default/sickbeard & >/dev/null
+        rm -f /etc/default/sickbeard2 & >/dev/null
 
         omv_config_delete "//services/sickbeard"
 

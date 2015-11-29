@@ -9,14 +9,17 @@ if [ -f /etc/default/sickbeard ]; then
     . /etc/default/sickbeard
 fi
 
-OMV_SICKBEARD1_APP_PATH=${CP_HOME-/opt/sickbeard/}
-OMV_SICKBEARD1_DATA_PATH=${CP_DATA-/var/opt/sickbeard}
+if [ -f /etc/default/sickbeard2 ]; then
+    . /etc/default/sickbeard2
+fi
+OMV_SICKBEARD1_APP_PATH=${SB_HOME-/opt/sickbeard/}
+OMV_SICKBEARD1_DATA_PATH=${SB_DATA-/var/opt/sickbeard}
 OMV_SICKBEARD1_DATA_CONFIG="${OMV_SICKBEARD1_DATA_PATH}/config.ini"
-OMV_SICKBEARD2_APP_PATH=${CP_HOME2-/opt/sickbeard2/}
-OMV_SICKBEARD2_DATA_PATH=${CP_DATA2-/var/opt/sickbeard2}
+OMV_SICKBEARD2_APP_PATH=${SB_HOME2-/opt/sickbeard2/}
+OMV_SICKBEARD2_DATA_PATH=${SB_DATA2-/var/opt/sickbeard2}
 OMV_SICKBEARD2_DATA_CONFIG="${OMV_SICKBEARD2_DATA_PATH}/config.ini"
-OMV_SICKBEARD_USER=${CP_USER-sickbeard}
-OMV_SICKBEARD_GROUP=${CP_GROUP-users}
+OMV_SICKBEARD_USER=${SB_USER-sickbeard}
+OMV_SICKBEARD_GROUP=${SB_GROUP-users}
 OMV_SICKBEARD_XPATH="/config/services/sickbeard"
 
 newinstance="$(omv_config_get "//services/sickbeard/newinstance")"
@@ -172,10 +175,10 @@ DESC=SickBeard2
 RUN_AS=${SB_USER-sickbeard}
 
 # Path to app SB_HOME=path_to_app_SickBeard.py
-APP_PATH=${SB_HOME-/opt/sickbeard2}
+APP_PATH=${SB_HOME2-/opt/sickbeard2}
 
 # Data directory where sickbeard.db, cache and logs are stored
-DATA_DIR=${SB_DATA-/var/opt/sickbeard2}
+DATA_DIR=${SB_DATA2-/var/opt/sickbeard2}
 
 # Path to store PID file
 PID_FILE=${SB_PIDFILE-/var/run/sickbeard/sickbeard2.pid}
