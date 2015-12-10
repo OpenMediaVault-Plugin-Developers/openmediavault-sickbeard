@@ -1,3 +1,9 @@
+openmediavault-sickbeard (1.0.14) unstable; urgency=low
+
+  * Fix missing folder error
+  
+ -- root <root@localhost.localdomain>  Thu, 10 Dec 2015 11:08:00 +0000
+
 openmediavault-sickbeard (1.0.13) unstable; urgency=low
 
   * Fix moving of data folders
