@@ -271,7 +271,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             array(
                 "uuid" => "21111111-2222-3333-4444-555555555555",
                 "name" => "Main Branch2",
-                "fork" => "https://github.com/SiCKRAGETV/SickRage.git",
+                "fork" => "https://github.com/SickRage/SickRage.git",
                 "branches" => array(
                     "master",
                     "develop"
