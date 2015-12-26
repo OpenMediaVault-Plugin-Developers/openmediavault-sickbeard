@@ -72,7 +72,7 @@ switch_branch()
     su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
     su -s /bin/sh -c "git checkout $branch --quiet" $OMV_SICKBEARD_USER
 
-    if [ $repo = "https://github.com/SiCKRAGETV/SickRage.git" ]; then
+    if [ $repo = "https://github.com/SickRage/SickRage.git" ]; then
         if [ $branch = "master" ]; then
             rm -R "${OMV_SICKBEARD1_APP_PATH}lib/requests" > /dev/null 2>&1
             su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
@@ -326,7 +326,7 @@ EOF
                 cd $OMV_SICKBEARD2_APP_PATH
                 su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
                 su -s /bin/sh -c "git checkout $branch2 --quiet" $OMV_SICKBEARD_USER
-                if [ $repo2 = "https://github.com/SiCKRAGETV/SickRage.git" ]; then
+                if [ $repo2 = "https://github.com/SickRage/SickRage.git" ]; then
                     if [ $branch2 = "master" ]; then
                         rm -R "${OMV_SICKBEARD2_APP_PATH}lib/requests" > /dev/null 2>&1
                         su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
@@ -476,6 +476,3 @@ if [ $newinstance = "1" ]; then
     fi
 fi
 exit 0
-
-
-
