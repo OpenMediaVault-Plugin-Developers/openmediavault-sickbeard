@@ -125,9 +125,9 @@ EOF
         #    /etc/init.d/sickbeard start
         #fi
 
-        if [ "$(omv_config_get "${SERVICE_XPATH}/newinstenable")" = "1" ]; then
-            /etc/init.d/sickbeard2 start
-        fi
+        #if [ "$(omv_config_get "${SERVICE_XPATH}/newinstenable")" = "1" ]; then
+        #    servicesickbeard2 start
+        #fi
 
         # Activate package triggers. These triggers are only set during the
         # package installation.

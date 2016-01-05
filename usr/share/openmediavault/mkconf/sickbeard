@@ -131,10 +131,12 @@ if [ $newinstance = "1" ]; then
         cat > /etc/systemd/system/sickbeard2.service <<'EOF'
 [Unit]
 Description=SickBeard2 Daemon
+After=network-online.target
 
 [Service]
 User=sickbeard
 Group=users
+UMask=000
 Type=forking
 GuessMainPID=no
 ExecStart=/usr/bin/python /opt/sickbeard2/SickBeard.py -q --daemon --nolaunch --datadir=/var/opt/sickbeard2

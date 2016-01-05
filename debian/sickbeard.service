@@ -1,9 +1,11 @@
 [Unit]
 Description=SickBeard Daemon
+After=network-online.target
 
 [Service]
 User=sickbeard
 Group=users
+UMask=000
 Type=forking
 GuessMainPID=no
 ExecStart=/usr/bin/python /opt/sickbeard/SickBeard.py -q --daemon --nolaunch --datadir=/var/opt/sickbeard
