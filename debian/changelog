@@ -1,3 +1,9 @@
+openmediavault-sickbeard (3.0) unstable; urgency=low
+
+  * OMV 3.0 release.
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Tue, 05 Jan 2016 01:38:00 +0000
+
 openmediavault-sickbeard (1.0.14) unstable; urgency=low
 
   * Fix missing folder error

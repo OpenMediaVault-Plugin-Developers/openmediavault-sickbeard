@@ -24,6 +24,17 @@ fi
 
 case "$1" in
     configure)
+        # Set the default settings of the service package to those expected by
+        # OpenMediaVault.
+        if [ -z "${2}" ]; then
+            systemctl stop sickbeard.service
+            systemctl disable sickbeard.service
+            if [ -f /etc/systemd/system/sickbeard2.service ]; then
+                systemctl stop sickbeard2.service
+                systemctl disable sickbeard2.service
+            fi
+        fi
+
         SERVICE_XPATH_NAME="sickbeard"
         SERVICE_XPATH="/config/services/${SERVICE_XPATH_NAME}"
 

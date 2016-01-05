@@ -43,7 +43,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
 
     private function getXpath()
     {
-        return sprintf("//services/%s", $this->getPluginName());
+        return sprintf("/config/services/%s", $this->getPluginName());
     }
 
     private function getForksXpath()
@@ -172,14 +172,14 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
                     "You can not enable both SSL and Proxy Pass."
                 );
             }
-            $xSsl = $xmlConfig->get("//webadmin/enablessl");
+            $xSsl = $xmlConfig->get("/config/webadmin/enablessl");
             if ($xSsl == "1") {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "You have SSL enabled for the main UI, Do NOT enable it here as well."
                 );
             }
-            $ySsl = $xmlConfig->get("//system/certificates/sslcertificate/uuid");
+            $ySsl = $xmlConfig->get("/config/system/certificates/sslcertificate/uuid");
             if ($ySsl == "") {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
@@ -640,7 +640,7 @@ class OMVRpcServiceSickbeard extends OMVRpcServiceAbstract
             // Delete current settings2 folder. Need to find a way of checking the archive to be sure settings2 is there
             if (file_exists($this->sickbeard2SettingsFile)) {
                 rmdir($this->sickbeard2SettingsDir);
-                $cmd = "/etc/init.d/sickbeard2 stop";
+                $cmd = "service sickbeard2 stop";
                 $this->exec($cmd);
             }
 

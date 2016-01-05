@@ -19,7 +19,7 @@
 
 require_once "openmediavault/config.inc";
 require_once "openmediavault/error.inc";
-require_once "openmediavault/initscript.inc";
+require_once "openmediavault/systemctl.inc";
 require_once "openmediavault/module.inc";
 
 class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
@@ -38,7 +38,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
 
     private function getXpath()
     {
-        return sprintf("//services/%s", $this->getPluginName());
+        return sprintf("/config/services/%s", $this->getPluginName());
     }
 
     public function getName()
@@ -59,13 +59,13 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             );
         }
 
-        $initd = new OMVSysVInitScript($this->getPluginName());
+        $systemCtl = new OMVSystemCtl($this->getPluginName());
 
         return array(
             "name"    => $this->getPluginName(),
             "title"   => gettext($this->getName()),
             "enabled" => boolval($object["enable"]),
-            "running" => $initd->status() == 0
+            "running" => $systemCtl->isActive()
         );
     }
 
@@ -76,7 +76,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             throw new OMVException(
                 OMVErrorMsg::E_EXEC_FAILED,
                 $cmd,
-                implode("\n", $output)
+                implode(PHP_EOL, $output)
             );
         }
     }
@@ -112,8 +112,8 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
                 return;
             }
 
-            $initd = new OMVSysVInitScript($this->getPluginName(), true);
-            $initd->exec();
+            $systemCtl = new OMVSystemCtl($this->getPluginName());
+            $systemCtl->enable(true);
         }
 
         if (boolval($object["newinstance"])) {
@@ -135,16 +135,16 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             }
 
             if  (boolval($object["newinstenable"])) {
-                $initd = new OMVSysVInitScript("sickbeard2", true);
-                $initd->exec();
+                $systemCtl = new OMVSystemCtl("sickbeard2");
+                $systemCtl->enable(true);
             }
         }
     }
 
     public function stopService()
     {
-        $initd = new OMVSysVInitScript($this->getPluginName());
-        $initd->exec();
+        $systemCtl = new OMVSystemCtl($this->getPluginName());
+        $systemCtl->disable(true);
     }
 
     public function bindListeners(OMVNotifyDispatcher $dispatcher)

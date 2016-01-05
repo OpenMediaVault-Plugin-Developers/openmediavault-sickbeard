@@ -13,6 +13,13 @@ OMV_SICKBEARD_XPATH="/config/services/sickbeard"
 
 case "$1" in
     purge)
+        systemctl stop sickbeard.service
+
+        if [ -f /etc/systemd/system/sickbeard2.service ]; then
+            systemctl stop sickbeard2.service
+            rm -Rf /etc/systemd/system/sickbeard2.service
+        fi
+
         omv_config_delete OMV_SICKBEARD_XPATH
 
         if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
