@@ -18,7 +18,7 @@
 // require("js/omv/WorkspaceManager.js")
 // require("js/omv/workspace/panel/Panel.js")
 
-Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
+Ext.define("OMV.module.admin.service.sickbeard.WebInterface2", {
     extend : "OMV.workspace.panel.Panel",
 
     initComponent : function() {
@@ -27,7 +27,7 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
             callback : function(id, success, response) {
                 var proxy = response.ppass;
                 if (proxy == true) {
-                    var link = "http://" + window.location.hostname + "/sickbeard/home/";
+                    var link = "http://" + window.location.hostname + "/sickbeard2/home/";
                 } else {
                     var link = "http://" + window.location.hostname + ":" + response.port + "/home/";
 				}
@@ -36,7 +36,7 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
             relayErrors : false,
             rpcData     : {
                 service  : "Sickbeard",
-                method   : "getSettings"
+                method   : "getSettings2"
             }
         });
 
@@ -45,9 +45,10 @@ Ext.define("OMV.module.admin.service.sickbeard.WebInterface", {
 });
 
 OMV.WorkspaceManager.registerPanel({
-    id        : "webinterface",
+    id        : "webinterface2",
     path      : "/service/sickbeard",
-    text      : _("Web Interface"),
+    text      : _("Web Interface2"),
     position  : 40,
-    className : "OMV.module.admin.service.sickbeard.WebInterface"
+    className : "OMV.module.admin.service.sickbeard.WebInterface2"
 });
+

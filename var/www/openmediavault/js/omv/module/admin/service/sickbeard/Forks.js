@@ -78,7 +78,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Forks", {
             listeners: {
                 scope: this,
                 submit: function() {
-                    this.doReload();
+                    document.location.reload();
                 }
             }
         }).show();
@@ -93,7 +93,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Forks", {
             listeners: {
                 scope: this,
                 submit: function() {
-                    this.doReload();
+                    document.location.reload();
                 }
             }
         }).show();
@@ -118,7 +118,8 @@ OMV.WorkspaceManager.registerPanel({
     id: "scheduledjobs",
     path: "/service/sickbeard",
     text: _("Forks"),
-    position: 20,
+    position: 60,
     className: "OMV.module.admin.service.sickbeard.Forks"
 });
+
 

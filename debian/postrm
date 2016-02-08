@@ -5,39 +5,50 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-OMV_SICKBEARD1_APP_PATH="/opt/sickbeard/"
-OMV_SICKBEARD1_DATA_PATH="/var/opt/sickbeard"
-OMV_SICKBEARD2_APP_PATH="/opt/sickbeard2/"
-OMV_SICKBEARD2_DATA_PATH="/var/opt/sickbeard2"
+
 OMV_SICKBEARD_XPATH="/config/services/sickbeard"
+OMV_SICKBEARD1_APP_PATH="/opt/sickbeard/"
+OMV_SICKBEARD2_APP_PATH="/opt/sickbeard2/"
+
+OMV_SICKBEARD1_DATA_PATH="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/db-folder")"
+OMV_SICKBEARD2_DATA_PATH="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/db-folder")"
 
 case "$1" in
     purge)
         systemctl stop sickbeard.service
+        systemctl stop sickbeard2.service
 
-        if [ -f /etc/systemd/system/sickbeard2.service ]; then
-            systemctl stop sickbeard2.service
-            rm -Rf /etc/systemd/system/sickbeard2.service
+        if [ -f /lib/systemd/system/sickbeard.service ]; then
+            systemctl disable sickbeard.service
+            rm -Rf /lib/systemd/system/sickbeard.service
+        fi
+
+        if [ -f /lib/systemd/system/sickbeard2.service ]; then
+            systemctl disable sickbeard2.service
+            rm -Rf /lib/systemd/system/sickbeard2.service
         fi
 
         omv_config_delete OMV_SICKBEARD_XPATH
 
         if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
-            find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
+            rm -Rf $OMV_SICKBEARD1_APP_PATH
         fi
 
         if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
-            find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
+            rm -Rf $OMV_SICKBEARD2_APP_PATH
         fi
 
-        if [ -d $OMV_SICKBEARD1_DATA_PATH ]; then
-            find $OMV_SICKBEARD1_DATA_PATH -mindepth 1 -delete
+        if [ ! -z $OMV_SICKBEARD1_DATA_PATH ]; then
+            if [ -d $OMV_SICKBEARD1_DATA_PATH ]; then
+                rm -Rf $OMV_SICKBEARD1_DATA_PATH
+            fi
         fi
 
-        if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
-            find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
+        if [ ! -z $OMV_SICKBEARD2_DATA_PATH ]; then
+            if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
+                rm -Rf $OMV_SICKBEARD2_DATA_PATH
+            fi
         fi
-
 
         if [ -f "/var/run/sickbeard/sickbeard.pid" ]; then
             start-stop-daemon --stop --pidfile /var/run/sickbeard/sickbeard.pid --retry 15 --oknodo > /dev/null 2>&1

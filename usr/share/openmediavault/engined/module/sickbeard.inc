@@ -46,11 +46,22 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
         return "Sickbeard";
     }
 
+    public function getSickBeard1XPath()
+    {
+        return sprintf("%s/instances/instance1", $this->getXpath());
+    }
+
+    public function getSickBeard2XPath()
+    {
+        return sprintf("%s/instances/instance2", $this->getXpath());
+    }
+
     public function getStatus()
     {
         global $xmlConfig;
 
-        $object = $xmlConfig->get($this->getXpath());
+        $object = $xmlConfig->get($this->getSickBeard1XPath());
+        $newobject = $xmlConfig->get($this->getSickBeard2XPath());
 
         if (is_null($object)) {
             throw new OMVException(
@@ -59,14 +70,21 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             );
         }
 
+        if (is_null($newobject)) {
+            throw new OMVException(
+                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
+                $this->getXpath()
+            );
+        }
+
         $systemCtl = new OMVSystemCtl($this->getPluginName());
 
-        return array(
+        return [
             "name"    => $this->getPluginName(),
             "title"   => gettext($this->getName()),
             "enabled" => boolval($object["enable"]),
             "running" => $systemCtl->isActive()
-        );
+        ];
     }
 
     public function applyConfig()
@@ -85,7 +103,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
     {
         global $xmlConfig;
 
-        $object = $xmlConfig->get($this->getXpath());
+        $object = $xmlConfig->get($this->getSickBeard1XPath());
 
         if (is_null($object)) {
             throw new OMVException(
@@ -116,7 +134,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
             $systemCtl->enable(true);
         }
 
-        if (boolval($object["newinstance"])) {
+        if (boolval($newobject["enable"])) {
 
             if ($object["branch2"] == "Please choose a branch") {
                 throw new OMVException(
@@ -134,10 +152,8 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
                 return;
             }
 
-            if  (boolval($object["newinstenable"])) {
-                $systemCtl = new OMVSystemCtl("sickbeard2");
-                $systemCtl->enable(true);
-            }
+            //$systemCtl = new OMVSystemCtl("sickbeard2");
+            //$systemCtl->enable(true);
         }
     }
 
@@ -152,7 +168,7 @@ class OMVModuleSickbeard extends OMVModuleServiceAbstract implements
         $dispatcher->addListener(
             OMV_NOTIFY_MODIFY,
             $this->getEventMessagePath(),
-            array($this, "setDirty")
+            [$this, "setDirty"]
         );
     }
 }

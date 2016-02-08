@@ -12,22 +12,80 @@ fi
 if [ -f /etc/default/sickbeard2 ]; then
     . /etc/default/sickbeard2
 fi
-OMV_SICKBEARD1_APP_PATH=${SB_HOME-/opt/sickbeard/}
-OMV_SICKBEARD1_DATA_PATH=${SB_DATA-/var/opt/sickbeard}
-OMV_SICKBEARD1_DATA_CONFIG="${OMV_SICKBEARD1_DATA_PATH}config.ini"
-OMV_SICKBEARD2_APP_PATH=${SB_HOME2-/opt/sickbeard2/}
-OMV_SICKBEARD2_DATA_PATH=${SB_DATA2-/var/opt/sickbeard2}
-OMV_SICKBEARD2_DATA_CONFIG="${OMV_SICKBEARD2_DATA_PATH}config.ini"
-OMV_SICKBEARD_USER=${SB_USER-sickbeard}
-OMV_SICKBEARD_GROUP=${SB_GROUP-users}
+
 OMV_SICKBEARD_XPATH="/config/services/sickbeard"
+OMV_SICKBEARD1_DATA_PATH="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/db-folder")/"
+OMV_SICKBEARD2_DATA_PATH="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/db-folder")/"
+enable="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/enable")"
+newinstenable="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/enable")"
 
-newinstance="$(omv_config_get "/config/services/sickbeard/newinstance")"
-newinstenable="$(omv_config_get "/config/services/sickbeard/newinstenable")"
-ppass="$(omv_config_get "/config/services/sickbeard/ppass")"
-ssl="$(omv_config_get "/config/services/sickbeard/ssl")"
+# Do nothing if both instances are not enabled.
+if [ $enable != "1" ] && [ $newinstenable != "1" ]; then
+    if [ $newinstance = "1" ]; then
+        if [ $newinstenable != "1" ]; then
+            systemctl disable sickbeard2.service > /dev/null 2>&1
+        fi
+    fi
+    exit
+fi
 
-if [ -f /etc/systemd/system/sickbeard2.service ]; then
+# Create default /etc/default/sickbeard file.
+rm /lib/systemd/system/sickbeard.service
+cat <<EOF > /lib/systemd/system/sickbeard.service
+[Unit]
+Description=SickBeard Daemon
+After=network-online.target
+
+[Service]
+User=$(omv_config_get /config/services/sickbeard/instances/instance1/username)
+EOF
+if [ "$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/usersgrp")" = "1" ]; then
+    OMV_SICKBEARD_GROUP=users
+    cat <<EOF >> /lib/systemd/system/sickbeard.service
+Group=users
+EOF
+else
+    OMV_SICKBEARD_GROUP="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/username")"
+    cat <<EOF >> /lib/systemd/system/sickbeard.service
+Group=$(omv_config_get /config/services/sickbeard/instances/instance1/username)
+EOF
+fi
+if [ ! -z "$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/umask")" ]; then
+    cat <<EOF >> /lib/systemd/system/sickbeard.service
+UMask=$(omv_config_get /config/services/sickbeard/instances/instance1/umask)
+EOF
+else
+    cat <<EOF >> /lib/systemd/system/sickbeard.service
+UMask=000
+EOF
+fi
+cat <<EOF >> /lib/systemd/system/sickbeard.service
+Type=forking
+GuessMainPID=no
+ExecStart=/usr/bin/python /opt/sickbeard/SickBeard.py --quiet --daemon --datadir ${OMV_SICKBEARD1_DATA_PATH}
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+
+OMV_SICKBEARD_USER="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/username")"
+if [ "$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/usersgrp")" = "1" ]; then
+    OMV_SICKBEARD_GROUP=users
+else
+    OMV_SICKBEARD_GROUP="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/username")"
+fi
+OMV_SICKBEARD1_APP_PATH=/opt/sickbeard/
+OMV_SICKBEARD2_APP_PATH=/opt/sickbeard2/
+OMV_SICKBEARD1_DATA_CONFIG="${OMV_SICKBEARD1_DATA_PATH}config.ini"
+OMV_SICKBEARD2_DATA_CONFIG="${OMV_SICKBEARD2_DATA_PATH}config.ini"
+newinstance="$(omv_config_get "${OMV_SICKBEARD_XPATH}/newinstance")"
+ppass="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/ppass")"
+ssl="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/ssl")"
+ppass2="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/ppass")"
+ssl2="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/ssl")"
+
+if [ -f /lib/systemd/system/sickbeard2.service ]; then
     service sickbeard2 stop > /dev/null 2>&1
 fi
 
@@ -38,10 +96,6 @@ switch_repo()
 
     if [ -d $OMV_SICKBEARD1_APP_PATH ]; then
         find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
-    fi
-
-    if [ -d $OMV_SICKBEARD1_DATA_PATH ]; then
-        find $OMV_SICKBEARD1_DATA_PATH -mindepth 1 -delete
     fi
 
     if [ ! -d $OMV_SICKBEARD1_DATA_PATH ]; then
@@ -84,122 +138,148 @@ switch_branch()
     fi
 }
 
-repo="$(omv_config_get "/config/services/sickbeard/repo")"
-branch="$(omv_config_get "/config/services/sickbeard/branch")"
+if [ $enable = "1" ]; then
+    repo="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/repo")"
+    branch="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance1/branch")"
 
-if [ ! -d "${OMV_SICKBEARD1_APP_PATH}" ]; then
-    mkdir -p $OMV_SICKBEARD1_APP_PATH
-    chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
-fi
+    if [ "${repo}" != "Please choose a repository" ] | [ "${branch}" != "Please choose a branch" ]; then
+        # If $OMV_SICKBEARD1_APP_PATH exists and is not empty fetch current repo and branch.
+        if [ ! -d "${OMV_SICKBEARD1_APP_PATH}" ]; then
+            mkdir -p $OMV_SICKBEARD1_APP_PATH
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
+        fi
 
-# If $OMV_SICKBEARD1_APP_PATH does not exist it must be first clone.
-if [ ! -f "${OMV_SICKBEARD1_APP_PATH}SickBeard.py" ]; then
-    find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
-    if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-        switch_repo $repo $branch
+        # If $OMV_SICKBEARD1_APP_PATH does not exist it must be first clone.
+        if [ ! -f "${OMV_SICKBEARD1_APP_PATH}SickBeard.py" ]; then
+            find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
+            switch_repo $repo $branch
+        fi
+
+        if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
+            cd $OMV_SICKBEARD1_APP_PATH
+
+            current_repo="$(git config --get remote.origin.url)"
+            current_branch="$(git rev-parse --abbrev-ref HEAD)"
+
+            if [ $repo != $current_repo ]; then
+                switch_repo $repo $branch
+            fi
+
+            if [ $branch != $current_branch ]; then
+                switch_branch $branch $repo
+            fi
+        else
+            find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
+            switch_repo $repo $branch
+        fi
     fi
-fi
-
-# If $OMV_SICKBEARD1_APP_PATH exists and is not empty fetch current repo and branch.
-if [ ! -f "${OMV_SICKBEARD1_APP_PATH}SickBeard.py" ]; then
-    find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
-    if [ "${repo}" != "Please choose a repository" ] && [ "${branch}" != "Please choose a branch" ]; then
-        switch_repo $repo $branch
-    fi
-fi
-
-if [ -n "$(ls -A $OMV_SICKBEARD1_APP_PATH)" ]; then
-    cd $OMV_SICKBEARD1_APP_PATH
-
-    current_repo="$(git config --get remote.origin.url)"
-    current_branch="$(git rev-parse --abbrev-ref HEAD)"
-
-    if [ $repo != $current_repo ]; then
-        switch_repo $repo $branch
-    fi
-
-    if [ $branch != $current_branch ]; then
-        switch_branch $branch $repo
-    fi
-else
-    find $OMV_SICKBEARD1_APP_PATH -mindepth 1 -delete
-    switch_repo $repo $branch
 fi
 
 if [ $newinstance = "1" ]; then
-    if  [ ! -f /etc/systemd/system/sickbeard2.service ]; then
-        cat > /etc/systemd/system/sickbeard2.service <<'EOF'
+    if [ $newinstenable = "1" ]; then
+        if  [ -f /lib/systemd/system/sickbeard2.service ]; then
+            rm /lib/systemd/system/sickbeard2.service
+        fi
+
+        cat <<EOF > /lib/systemd/system/sickbeard2.service
 [Unit]
 Description=SickBeard2 Daemon
 After=network-online.target
 
 [Service]
-User=sickbeard
+User=$(omv_config_get /config/services/sickbeard/instances/instance2/username)
+EOF
+
+        if [ "$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/usersgrp")" = "1" ]; then
+            OMV_SICKBEARD2_GROUP=users
+            cat <<EOF >> /lib/systemd/system/sickbeard2.service
 Group=users
+EOF
+        else
+            OMV_SICKBEARD2_GROUP="$(omv_config_get "/config/services/sickbeard/instances/instance2/username")"
+            cat <<EOF >> /lib/systemd/system/sickbeard2.service
+Group=$(omv_config_get /config/services/sickbeard/instances/instance2/username)
+EOF
+        fi
+
+        if [ ! -z "$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/umask")" ]; then
+            cat <<EOF >> /lib/systemd/system/sickbeard2.service
+UMask=$(omv_config_get /config/services/sickbeard/instances/instance2/umask)
+EOF
+        else
+            cat <<EOF >> /lib/systemd/system/sickbeard2.service
 UMask=000
+EOF
+        fi
+        cat <<EOF >> /lib/systemd/system/sickbeard2.service
 Type=forking
 GuessMainPID=no
-ExecStart=/usr/bin/python /opt/sickbeard2/SickBeard.py -q --daemon --nolaunch --datadir=/var/opt/sickbeard2
+ExecStart=/usr/bin/python /opt/sickbeard2/SickBeard.py --quiet --daemon --datadir ${OMV_SICKBEARD2_DATA_PATH}
 
 [Install]
 WantedBy=multi-user.target
 
 EOF
-        systemctl enable sickbeard2.service
-    fi
-    if [ $newinstenable = "1" ]; then
-        repo2="$(omv_config_get "/config/services/sickbeard/repo2")"
-        branch2="$(omv_config_get "/config/services/sickbeard/branch2")"
-        if [ ! -f "${OMV_SICKBEARD2_APP_PATH}SickBeard.py" ]; then
-            if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
-                find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
-            fi
 
-            if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
-                find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
-            fi
-            cd /home
-            su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD_USER > /dev/null 2>&1
-            # Can not create dir as user so create it then change ownership.
-            mkdir -p $OMV_SICKBEARD2_DATA_PATH
-            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH
-        else
-            cd $OMV_SICKBEARD2_APP_PATH
-            current_repo2="$(git config --get remote.origin.url)"
+        systemctl enable sickbeard2.service > /dev/null 2>&1
 
-            if [ $repo2 != $current_repo2 ]; then
+        OMV_SICKBEARD2_USER="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/username")"
+        repo2="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/repo")"
+        branch2="$(omv_config_get "${OMV_SICKBEARD_XPATH}/instances/instance2/branch")"
+
+        if [ "${repo2}" != "Please choose a repository" ] | [ "${branch2}" != "Please choose a branch" ]; then
+            if [ ! -f "${OMV_SICKBEARD2_APP_PATH}SickBeard.py" ]; then
                 if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
                     find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
                 fi
 
-                if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
-                    find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
+                if [ ! -d $OMV_SICKBEARD2_DATA_PATH ]; then
+                    mkdir -p $OMV_SICKBEARD2_DATA_PATH
+                    chown $OMV_SICKBEARD2_USER:$OMV_SICKBEARD2_GROUP $OMV_SICKBEARD2_DATA_PATH
                 fi
 
-                cd /home
-                su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD_USER
+                mkdir -p $OMV_SICKBEARD2_APP_PATH
+                chown $OMV_SICKBEARD2_USER:$OMV_SICKBEARD2_GROUP $OMV_SICKBEARD2_APP_PATH
+                cd /tmp
+
+                su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD2_USER
                 # Can not create dir as user so create it then change ownership.
                 mkdir -p $OMV_SICKBEARD2_DATA_PATH
-                chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH
-            fi
-
-            cd $OMV_SICKBEARD2_APP_PATH
-            current_branch2="$(git rev-parse --abbrev-ref HEAD)"
-
-            if [ $branch2 != $current_branch2 ]; then
+                chown $OMV_SICKBEARD2_USER:$OMV_SICKBEARD2_GROUP $OMV_SICKBEARD2_DATA_PATH
+            else
                 cd $OMV_SICKBEARD2_APP_PATH
-                su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
-                su -s /bin/sh -c "git checkout $branch2 --quiet" $OMV_SICKBEARD_USER
-                if [ $repo2 = "https://github.com/SickRage/SickRage.git" ]; then
-                    if [ $branch2 = "master" ]; then
-                        rm -R "${OMV_SICKBEARD2_APP_PATH}lib/requests" > /dev/null 2>&1
-                        su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD_USER
+                current_repo2="$(git config --get remote.origin.url)"
+
+                if [ $repo2 != $current_repo2 ]; then
+                    if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
+                        find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
+                    fi
+
+                    cd /tmp
+
+                    su -s /bin/sh -c "git clone $repo2 -b $branch2 $OMV_SICKBEARD2_APP_PATH" $OMV_SICKBEARD2_USER
+                    # Can not create dir as user so create it then change ownership.
+                    mkdir -p $OMV_SICKBEARD2_DATA_PATH
+                    chown $OMV_SICKBEARD2_USER:$OMV_SICKBEARD2_GROUP $OMV_SICKBEARD2_DATA_PATH
+                fi
+
+                cd $OMV_SICKBEARD2_APP_PATH
+                current_branch2="$(git rev-parse --abbrev-ref HEAD)"
+
+                if [ $branch2 != $current_branch2 ]; then
+                    cd $OMV_SICKBEARD2_APP_PATH
+                    su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD2_USER
+                    su -s /bin/sh -c "git checkout $branch2 --quiet" $OMV_SICKBEARD2_USER
+                    if [ $repo2 = "https://github.com/SickRage/SickRage.git" ]; then
+                        if [ $branch2 = "master" ]; then
+                            rm -R "${OMV_SICKBEARD2_APP_PATH}lib/requests" > /dev/null 2>&1
+                            su -s /bin/sh -c "git reset --hard --quiet" $OMV_SICKBEARD2_USER
+                        fi
                     fi
                 fi
             fi
-        fi
-        if [ ! -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
-            echo '[General]
+            if [ ! -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
+                echo '[General]
 launch_browser = 0
 git_path = "/usr/bin/git"
 port = 8082
@@ -209,35 +289,52 @@ enable_https = 0
 https_cert = server.crt
 https_key = server.key
 web_root = ""' > $OMV_SICKBEARD2_DATA_CONFIG
-            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
-            chmod 775 $OMV_SICKBEARD2_DATA_PATH -R
-        else
-            sed -i 's/^port = 8081/port = 8082/' $OMV_SICKBEARD2_DATA_CONFIG
-            sed -i 's/^web_port = 8081/web_port = 8082/' $OMV_SICKBEARD2_DATA_CONFIG
+                chown $OMV_SICKBEARD2_USER:$OMV_SICKBEARD2_GROUP $OMV_SICKBEARD2_DATA_PATH -R
+                chmod 775 $OMV_SICKBEARD2_DATA_PATH -R
+            else
+                sed -i 's/^port = 8081/port = 8082/' $OMV_SICKBEARD2_DATA_CONFIG
+                sed -i 's/^web_port = 8081/web_port = 8082/' $OMV_SICKBEARD2_DATA_CONFIG
+            fi
+            if [ $ssl2 = "1" ]; then
+                if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
+                    sed -i 's/^enable_https.*/enable_https = 1/' $OMV_SICKBEARD2_DATA_CONFIG
+                    sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $OMV_SICKBEARD2_DATA_CONFIG
+                    sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $OMV_SICKBEARD2_DATA_CONFIG
+                fi
+            else
+                if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
+                    sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD2_DATA_CONFIG
+                    sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD2_DATA_CONFIG
+                    sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD2_DATA_CONFIG
+                fi
+            fi
         fi
     fi
 else
-    if  [ -f /etc/systemd/system/sickbeard2.service ]; then
-        if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
-            rm -Rf /var/run/sickbeard/sickbeard2.pid > /dev/null 2>&1
-        fi
-
-        systemctl disable sickbeard2.service > /dev/null 2>&1
-        if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
-            find $OMV_SICKBEARD2_APP_PATH -mindepth 1 -delete
-        fi
-
-        if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
-            find $OMV_SICKBEARD2_DATA_PATH -mindepth 1 -delete
-        fi
-        rm -Rf /etc/systemd/system/sickbeard2.service > /dev/null 2>&1
-
-        newinstenable="0"
-        xmlstarlet ed -L -u "/config/services/sickbeard/newinstenable" -v 0 $OMV_CONFIG_FILE
+    if  [ -f /lib/systemd/system/sickbeard2.service ]; then
+            rm /lib/systemd/system/sickbeard2.service > /dev/null 2>&1
     fi
+
+    if [ -f "/var/run/sickbeard/sickbeard2.pid" ]; then
+        rm -Rf /var/run/sickbeard/sickbeard2.pid > /dev/null 2>&1
+    fi
+
+    systemctl disable sickbeard2.service > /dev/null 2>&1
+
+    if [ -d $OMV_SICKBEARD2_APP_PATH ]; then
+        rm -R $OMV_SICKBEARD2_APP_PATH
+    fi
+
+    if [ -d $OMV_SICKBEARD2_DATA_PATH ]; then
+        rm -R $OMV_SICKBEARD2_DATA_PATH
+    fi
+
+    xmlstarlet ed -L -u "/config/services/sickbeard/instances/instance2/enable" -v 0 $OMV_CONFIG_FILE
+    xmlstarlet ed -L -u "/config/services/sickbeard/instances/instance2/repo" -v "Please choose a repository" $OMV_CONFIG_FILE
+    xmlstarlet ed -L -u "/config/services/sickbeard/instances/instance2/branch" -v "Please choose a branch" $OMV_CONFIG_FILE
 fi
 
-if [ $ssl = "1" ]; then
+if [ $ssl = "1" -o $ssl2 = "1" ]; then
     if [ ! -f "${OMV_SICKBEARD1_DATA_PATH}/Certificate.crt" ]; then
         # Create the certificate files.
         xmlstarlet sel -t -m "/config/system/certificates/sslcertificate" \
@@ -258,38 +355,32 @@ if [ $ssl = "1" ]; then
                   chmod 0600 ${keyfile}
                   chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP ${keyfile}
           done
-        #Enable
+    fi
+
+    if [ $ssl = "1" ]; then
         if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
             sed -i 's/^enable_https.*/enable_https = 1/' $OMV_SICKBEARD1_DATA_CONFIG
             sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $OMV_SICKBEARD1_DATA_CONFIG
             sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $OMV_SICKBEARD1_DATA_CONFIG
         fi
-        if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
-            sed -i 's/^enable_https.*/enable_https = 1/' $OMV_SICKBEARD2_DATA_CONFIG
-            sed -i 's/^https_cert.*/https_cert = \/home\/sickbeard\/Certificate.crt/' $OMV_SICKBEARD2_DATA_CONFIG
-            sed -i 's/^https_key.*/https_key = \/home\/sickbeard\/Private.key/' $OMV_SICKBEARD2_DATA_CONFIG
-        fi
-    fi
-else
-    if [ -f "${OMV_SICKBEARD1_DATA_PATH}/Certificate.crt" ]; then
-        #Disable
-        if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
-            sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD1_DATA_CONFIG
-            sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD1_DATA_CONFIG
-            sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD1_DATA_CONFIG
-        fi
-        if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
-            sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD2_DATA_CONFIG
-            sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD2_DATA_CONFIG
-            sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD2_DATA_CONFIG
+    else
+        if [ -f "${OMV_SICKBEARD1_DATA_PATH}/Certificate.crt" ]; then
+            #Disable
+            if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
+                sed -i 's/^enable_https.*/enable_https = 0/' $OMV_SICKBEARD1_DATA_CONFIG
+                sed -i 's/^https_cert.*/https_cert = server.crt/' $OMV_SICKBEARD1_DATA_CONFIG
+                sed -i 's/^https_key.*/https_key = server.key/' $OMV_SICKBEARD1_DATA_CONFIG
+            fi
         fi
         rm -Rf "${OMV_SICKBEARD1_DATA_PATH}/Certificate.crt" > /dev/null 2>&1
         rm -Rf "${OMV_SICKBEARD1_DATA_PATH}/Private.key" > /dev/null 2>&1
     fi
 fi
 
-if [ $ppass = "1" ]; then
-    cat <<EOF > /etc/nginx/openmediavault-webgui.d/sb.conf
+if [ $ppass = "1" -o $ppass2 = "1" ]; then
+    rm -Rf /etc/nginx/openmediavault-webgui.d/sb.conf > /dev/null 2>&1
+    if [ $ppass = "1" ]; then
+        cat <<EOF > /etc/nginx/openmediavault-webgui.d/sb.conf
 location /sickbeard {
         proxy_pass        http://localhost:8081/sickbeard;
         proxy_set_header  Host localhost:8081;
@@ -297,14 +388,21 @@ location /sickbeard {
 }
 
 EOF
-    if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
-        sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $OMV_SICKBEARD1_DATA_CONFIG
+        if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
+            sed -i 's/^web_root.*/web_root = "\/sickbeard"/' $OMV_SICKBEARD1_DATA_CONFIG
+        fi
+    else
+        if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
+            sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD1_DATA_CONFIG
+        fi
     fi
-    if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
-        sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $OMV_SICKBEARD2_DATA_CONFIG
-    fi
-    if [ $newinstance = "1" ]; then
-        cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
+
+    if [ $newinstenable = "1" ]; then
+        if [ $ppass2 = "1" ]; then
+            if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
+                sed -i 's/^web_root.*/web_root = "\/sickbeard2"/' $OMV_SICKBEARD2_DATA_CONFIG
+            fi
+            cat <<EOF >> /etc/nginx/openmediavault-webgui.d/sb.conf
 location /sickbeard2 {
         proxy_pass        http://localhost:8082/sickbeard2;
         proxy_set_header  Host localhost:8082;
@@ -312,13 +410,20 @@ location /sickbeard2 {
 }
 
 EOF
+        else
+           if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
+               sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD2_DATA_CONFIG
+            fi
+        fi
     fi
     nginx -s reload
 else
     rm -Rf /etc/nginx/openmediavault-webgui.d/sb.conf > /dev/null 2>&1
+
     if [ -f $OMV_SICKBEARD1_DATA_CONFIG ]; then
         sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD1_DATA_CONFIG
     fi
+
     if [ -f $OMV_SICKBEARD2_DATA_CONFIG ]; then
         sed -i 's/^web_root.*/web_root = ""/' $OMV_SICKBEARD2_DATA_CONFIG
     fi
@@ -330,13 +435,7 @@ if [ $newinstance = "1" ]; then
         systemctl enable sickbeard2.service > /dev/null 2>&1
         service sickbeard2 start &> /dev/null 2>&1
     else
-        if [ -f /etc/init.d/sickbeard2 ]; then
-            systemctl disable sickbeard2.service > /dev/null 2>&1
-        fi
-
-        if [ -f /var/run/sickbeard/sickbeard2.pid ]; then
-            rm -Rf /var/run/sickbeard/sickbeard2.pid > /dev/null 2>&1
-        fi
+        systemctl disable sickbeard2.service > /dev/null 2>&1
     fi
 fi
 exit 0

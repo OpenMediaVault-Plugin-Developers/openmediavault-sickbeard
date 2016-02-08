@@ -22,13 +22,41 @@ if [ ${#lang} -lt 11 ]; then
     lang="en_US.UTF-8"
 fi
 
+migrate_data_location()
+{
+    if [ -d /home/sickbeard/.sickbeard ]; then
+        # Migrate old data to new location.
+        if [ ! -e $OMV_SICKBEARD1_DATA_PATH ]; then
+            mkdir -p $OMV_SICKBEARD1_DATA_PATH
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_DATA_PATH -R
+        fi
+        su -s /bin/sh -c "cp -ra /home/sickbeard/.sickbeard/* ${OMV_SICKBEARD1_DATA_PATH}" $OMV_SICKBEARD_USER
+    fi
+
+    if [ -d /home/sickbeard/.sickbeard2 ]; then
+        if [ ! -e $OMV_SICKBEARD2_DATA_PATH ]; then
+            mkdir -p $OMV_SICKBEARD2_DATA_PATH
+            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
+        fi
+        # Migrate old data to new location.
+        su -s /bin/sh -c "cp -ra /home/sickbeard/.sickbeard/* ${OMV_SICKBEARD2_DATA_PATH}" $OMV_SICKBEARD_USER
+    fi
+
+    # Remove sickbeard home directory.
+    if [ -d /home/sickbeard ]; then
+        rm -rf /home/sickbeard
+    fi
+}
+
 case "$1" in
     configure)
         # Set the default settings of the service package to those expected by
         # OpenMediaVault.
         if [ -z "${2}" ]; then
-            systemctl stop sickbeard.service
-            systemctl disable sickbeard.service
+            if [ -f /etc/systemd/system/sickbeard.service ]; then
+                systemctl stop sickbeard.service
+                systemctl disable sickbeard.service
+            fi
             if [ -f /etc/systemd/system/sickbeard2.service ]; then
                 systemctl stop sickbeard2.service
                 systemctl disable sickbeard2.service
@@ -38,16 +66,151 @@ case "$1" in
         SERVICE_XPATH_NAME="sickbeard"
         SERVICE_XPATH="/config/services/${SERVICE_XPATH_NAME}"
 
+        if dpkg --compare-versions "${2}" lt-nl "3.1"; then
+            migrate_data_location
+
+            if omv_config_exists "${SERVICE_XPATH}"; then
+                ENABLE="$(omv_config_get "${SERVICE_XPATH}/enable")"
+                SHOWTAB="$(omv_config_get "${SERVICE_XPATH}/show_tab")"
+                BRANCH="$(omv_config_get "${SERVICE_XPATH}/branch")"
+                REPO="$(omv_config_get "${SERVICE_XPATH}/repo")"
+            else
+                ENABLE="0"
+                SHOWTAB="0"
+                BRANCH="Please choose a branch"
+                REPO="Please choose a repository"
+            fi
+
+            if omv_config_exists "${SERVICE_XPATH}/username"; then
+                USERNAME="$(omv_config_get "${SERVICE_XPATH}/username")"
+                USERGRP="$(omv_config_get "${SERVICE_XPATH}/usersgrp")"
+                UMASK="$(omv_config_get "${SERVICE_XPATH}/umask")"
+            else
+                USERNAME="sickbeard"
+                USERGRP="0"
+                UMASK="000"
+            fi
+
+            if omv_config_exists "${SERVICE_XPATH}/repo2"; then
+                BRANCH2="$(omv_config_get "${SERVICE_XPATH}/branch2")"
+                REPO2="$(omv_config_get "${SERVICE_XPATH}/repo2")"
+                SSL="$(omv_config_get "${SERVICE_XPATH}/ssl")"
+                PPASS="$(omv_config_get "${SERVICE_XPATH}/ppass")"
+                INSTAL="$(omv_config_get "${SERVICE_XPATH}/newinstance")"
+                RUN="$(omv_config_get "${SERVICE_XPATH}/newinstenable")"
+                PORT="$(omv_config_get "${SERVICE_XPATH}/port")"
+            else
+                SSL="0"
+                PPASS="0"
+                BRANCH2="Please choose a branch"
+                REPO2="Please choose a repository"
+                INSTAL="0"
+                RUN="0"
+                PORT="8081"
+            fi
+
+            if omv_config_exists "${SERVICE_XPATH}/forks"; then
+                FORKS="$(omv_config_get "${SERVICE_XPATH}/forks")"
+            else
+                FORKS=""
+            fi
+
+            omv_config_delete "${SERVICE_XPATH}"
+
+            if ! omv_config_exists "${SERVICE_XPATH}"; then
+                omv_config_add_element "/config/services" "${SERVICE_XPATH_NAME}"
+                omv_config_add_element "${SERVICE_XPATH}" "newinstance" $INSTAL
+            fi
+
+            if ! omv_config_exists "${SERVICE_XPATH}/instances"; then
+                omv_config_add_element "${SERVICE_XPATH}" "instances"
+            fi
+
+            if ! omv_config_exists "${SERVICE_XPATH}/forks"; then
+                omv_config_add_element "${SERVICE_XPATH}" "forks" $FORKS
+            fi
+
+            if ! omv_config_exists "${SERVICE_XPATH}/instances/instance1"; then
+                omv_config_add_element "${SERVICE_XPATH}/instances" "instance1"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "enable" $ENABLE
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "repo" $REPO
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "branch" $BRANCH
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "ssl" $SSL
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "ppass" $PPASS
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "mntentref"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "db-folder" "/var/opt/sickbeard"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "username" $USERNAME
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "usersgrp" $USERGRP
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "umask" $UMASK
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "showtab" $SHOWTAB
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "port" "8081"
+            fi
+
+            if ! omv_config_exists "${SERVICE_XPATH}/instances/instance2"; then
+                omv_config_add_element "${SERVICE_XPATH}/instances" "instance2"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "enable" $RUN
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "repo" $REPO2
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "branch" $BRANCH2
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "ssl" $SSL
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "ppass" $PPASS
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "mntentref"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "db-folder" "/var/opt/sickbeard2"
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "username" $USERNAME
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "usersgrp" $USERGRP
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "umask" $UMASK
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "showtab" $SHOWTAB
+                omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "port" "8082"
+            fi
+
+        rm -f /var/cache/openmediavault/cache.*.json >/dev/null 2>&1
+
+        fi
+
         if ! omv_config_exists "${SERVICE_XPATH}"; then
+            echo "Updating configuration"
+
             omv_config_add_element "/config/services" "${SERVICE_XPATH_NAME}"
-            omv_config_add_element "${SERVICE_XPATH}" "enable" "0"
-            omv_config_add_element "${SERVICE_XPATH}" "ssl" "0"
-            omv_config_add_element "${SERVICE_XPATH}" "ppass" "0"
-            omv_config_add_element "${SERVICE_XPATH}" "repo" "Please choose a repository"
-            omv_config_add_element "${SERVICE_XPATH}" "branch" "Please choose a branch"
-            omv_config_add_element "${SERVICE_XPATH}" "repo2" "Please choose a repository"
-            omv_config_add_element "${SERVICE_XPATH}" "branch2" "Please choose a branch"
-            omv_config_add_element "${SERVICE_XPATH}" "show_tab" "0"
+            omv_config_add_element "${SERVICE_XPATH}" "newinstance" "0"
+        fi
+
+        if ! omv_config_exists "${SERVICE_XPATH}/instances"; then
+            omv_config_add_element "${SERVICE_XPATH}" "instances"
+        fi
+
+        if ! omv_config_exists "${SERVICE_XPATH}/forks"; then
+            omv_config_add_element "${SERVICE_XPATH}" "forks"
+        fi
+
+        if ! omv_config_exists "${SERVICE_XPATH}/instances/instance1"; then
+            omv_config_add_element "${SERVICE_XPATH}/instances" "instance1"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "enable" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "repo" "Please choose a repository"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "branch" "Please choose a branch"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "ssl" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "ppass" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "mntentref"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "db-folder" "/var/opt/sickbeard"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "username" "sickbeard"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "usersgrp" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "umask" "000"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "showtab" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance1" "port" "8081"
+        fi
+
+        if ! omv_config_exists "${SERVICE_XPATH}/instances/instance2"; then
+            omv_config_add_element "${SERVICE_XPATH}/instances" "instance2"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "enable" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "repo" "Please choose a repository"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "branch" "Please choose a branch"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "ssl" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "ppass" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "mntentref"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "db-folder" "/var/opt/sickbeard2"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "username" "sickbeard"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "usersgrp" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "umask" "000"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "showtab" "0"
+            omv_config_add_element "${SERVICE_XPATH}/instances/instance2" "port" "8082"
         fi
 
         if [ ! -f $OMV_SICKBEARD1_Configuration ]; then
@@ -79,19 +242,6 @@ Environment=LANG=$lang
 EOF
         fi
 
-        if [ -e $OMV_SICKBEARD1_OLD_DATA_PATH ]; then
-            if [ ! -e $OMV_SICKBEARD1_DATA_PATH ]; then
-                mv $OMV_SICKBEARD1_OLD_DATA_PATH $OMV_SICKBEARD1_DATA_PATH
-                OMV_SICKBEARD_old="yes"
-            fi
-        fi
-
-        if [ -e $OMV_SICKBEARD2_OLD_DATA_PATH ]; then
-            if [ ! -e $OMV_SICKBEARD2_DATA_PATH ]; then
-                mv $OMV_SICKBEARD2_OLD_DATA_PATH $OMV_SICKBEARD2_DATA_PATH
-            fi
-        fi
-
         if [ "$OMV_SICKBEARD_old" = "yes" ] && getent passwd sickbeard >/dev/null 2>&1; then
             userdel -rf sickbeard
         fi
@@ -99,7 +249,7 @@ EOF
         if ! getent passwd sickbeard >/dev/null 2>&1; then
             adduser --quiet \
                     --system \
-                    --ingroup $OMV_SICKBEARD_GROUP \
+                    --group \
                     --no-create-home \
                     --disabled-password \
                     $OMV_SICKBEARD_USER
@@ -109,28 +259,10 @@ EOF
             chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_APP_PATH
         fi
 
-        if [ -e $OMV_SICKBEARD1_DATA_PATH ]; then
-            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD1_DATA_PATH -R
-        fi
-
         if [ -e $OMV_SICKBEARD2_APP_PATH ]; then
             chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_APP_PATH
         fi
 
-        if [ -e $OMV_SICKBEARD2_DATA_PATH ]; then
-            chown $OMV_SICKBEARD_USER:$OMV_SICKBEARD_GROUP $OMV_SICKBEARD2_DATA_PATH -R
-        fi
-
-        #if [ "$(omv_config_get "${SERVICE_XPATH}/enable")" = "1" ]; then
-        #    /etc/init.d/sickbeard start
-        #fi
-
-        #if [ "$(omv_config_get "${SERVICE_XPATH}/newinstenable")" = "1" ]; then
-        #    servicesickbeard2 start
-        #fi
-
-        # Activate package triggers. These triggers are only set during the
-        # package installation.
         dpkg-trigger update-fixperms
         dpkg-trigger update-locale
     ;;

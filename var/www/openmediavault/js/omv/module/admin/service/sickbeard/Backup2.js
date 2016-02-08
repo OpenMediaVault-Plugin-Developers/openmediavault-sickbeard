@@ -18,7 +18,7 @@
 // require("js/omv/WorkspaceManager.js")
 // require("js/omv/workspace/window/Form.js")
 
-Ext.define("OMV.module.admin.service.sickbeard.Backup", {
+Ext.define("OMV.module.admin.service.sickbeard.Backup2", {
     extend: "OMV.workspace.window.Form",
 
     hideResetButton: true,
@@ -62,7 +62,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Backup", {
             return;
         }
 
-        this.doAction("doBackup");
+        this.doAction("doBackup2");
     },
 
     onRestoreButton: function() {
@@ -72,7 +72,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Backup", {
             return;
         }
 
-        this.doAction("doRestore");
+        this.doAction("doRestore2");
     },
 
     doAction: function(method) {
@@ -102,3 +102,4 @@ Ext.define("OMV.module.admin.service.sickbeard.Backup", {
         wnd.start();
     }
 });
+
