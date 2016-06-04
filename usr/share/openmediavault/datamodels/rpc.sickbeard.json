@@ -1,0 +1,131 @@
+[{
+    "type": "rpc",
+    "id": "rpc.sickbeard.setinstance",
+    "params": {
+        "type": "object",
+		"properties": {
+		    "newinstance": {
+		        "type": "integer",
+		        "required": true
+		    }
+		}
+	}
+},{
+	"type": "rpc",
+	"id": "rpc.sickbeard.setsettings1",
+	"params": {
+		"type": "object",
+		"properties": {
+			"enable": {
+			    "type": "boolean",
+				"required": true
+			},
+			"showtab": {
+			    "type": "boolean",
+				"required": true
+			},
+			"ssl": {
+			    "type": "boolean",
+				"required": true
+			},
+			"ppass": {
+			    "type": "boolean",
+				"required": true
+			},
+		    "port": {
+		        "type": "integer",
+		        "minimum": 1025,
+		        "maximum": 65535,
+		        "required": true
+		    },
+			"mntentref": {
+				"type": "string",
+				"format": "uuidv4",
+				"required": false
+			},
+			"db-folder":{
+				"type": "string",
+				"required": false
+			},
+			"branch": {
+				"type": "string",
+				"required": true
+			},
+			"repo": {
+				"type": "string",
+				"required": true
+			},
+			"username": {
+				"type": "string",
+				"required": true
+			},
+			"usersgrp": {
+			    "type": "boolean",
+				"required": true
+			},
+			"umask": {
+				"type": "string",
+				"required": true
+			}
+		}
+	}
+},{
+	"type": "rpc",
+	"id": "rpc.sickbeard.setsettings2",
+	"params": {
+		"type": "object",
+		"properties": {
+			"enable": {
+			    "type": "boolean",
+				"required": true
+			},
+			"showtab": {
+			    "type": "boolean",
+				"required": true
+			},
+			"ssl": {
+			    "type": "boolean",
+				"required": true
+			},
+			"ppass": {
+			    "type": "boolean",
+				"required": true
+			},
+		    "port": {
+		        "type": "integer",
+		        "minimum": 1025,
+		        "maximum": 65535,
+		        "required": true
+		    },
+			"mntentref": {
+				"type": "string",
+				"format": "uuidv4",
+				"required": false
+			},
+			"db-folder":{
+				"type": "string",
+				"required": false
+			},
+			"branch": {
+				"type": "string",
+				"required": true
+			},
+			"repo": {
+				"type": "string",
+				"required": true
+			},
+			"username": {
+				"type": "string",
+				"required": true
+			},
+			"usersgrp": {
+			    "type": "boolean",
+				"required": true
+			},
+			"umask": {
+				"type": "string",
+				"required": true
+			}
+		}
+	}
+}]
