@@ -1,0 +1,65 @@
+{
+	"type": "config",
+	"id": "conf.service.sickbeard.instance1",
+	"title": "SickBeard",
+	"queryinfo": {
+		"xpath": "/config/services/sickbeard/instances/instance1",
+		"iterable": false
+	},
+	"properties": {
+		"enable": {
+			"type": "boolean",
+			"default": false
+		},
+		"showtab": {
+			"type": "boolean",
+			"default": false
+		},
+		"ssl": {
+			"type": "boolean",
+			"default": false
+		},
+		"ppass": {
+			"type": "boolean",
+			"default": false
+		},
+		"port": {
+			"type": "integer",
+			"minimum": 1025,
+			"maximum": 65535,
+			"default": 8081
+		},
+		"mntentref": {
+			"type": "string",
+			"format": "uuidv4"
+		},
+		"db-folder": {
+			"type": "string"
+		},
+		"branch": {
+			"type": "string",
+			"default": "Please choose a branch"
+		},
+		"repo": {
+			"type": "string",
+			"default": "Please choose a repository"
+		},
+		"username": {
+			"type": "string",
+			"default": ""
+		},
+		"usersgrp": {
+			"type": "boolean",
+			"default": false
+		},
+		"umask": {
+			"type": "string",
+			"default": ""
+		},
+		"forks": {
+			"type": "string",
+			"default": ""
+		}
+	}
+}
+

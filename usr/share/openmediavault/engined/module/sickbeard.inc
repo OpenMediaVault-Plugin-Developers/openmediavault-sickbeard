@@ -37,6 +37,8 @@ class Sickbeard extends ServiceAbstract implements
     private $database;
 
     private $dataModelPath = 'conf.service.sickbeard';
+    private $instance1DataModelPath = 'conf.service.sickbeard.instance1';
+    private $instance2DataModelPath = 'conf.service.sickbeard.instance2';
 
     private $eventMessagePath = 'org.openmediavault.conf.services.sickbeard';
 
@@ -58,7 +60,7 @@ class Sickbeard extends ServiceAbstract implements
 
     public function getStatus()
     {
-        $object = $this->database->get($this->dataModelPath);
+        $object = $this->database->get($this->instance1DataModelPath);
         $systemCtl = new SystemCtl($this->serviceName);
 
         return [
@@ -78,11 +80,12 @@ class Sickbeard extends ServiceAbstract implements
 
     public function startService()
     {
-        $object = $this->database->get($this->dataModelPath);
+        $object1 = $this->database->get($this->instance1DataModelPath);
+        $object2 = $this->database->get($this->instance1DataModelPath);
 
-        if ($object->get('enable')) {
+        if ($object1->get('enable')) {
 
-            if ($object->get('branch') == "Please choose a branch") {
+            if ($object1->get('branch') == "Please choose a branch") {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "Please select a repository and branch"
@@ -90,7 +93,7 @@ class Sickbeard extends ServiceAbstract implements
                 return;
             }
 
-            if ($object->get('repo') == "Please choose a repository") {
+            if ($object1->get('repo') == "Please choose a repository") {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "Please select a repository and branch"
@@ -102,9 +105,9 @@ class Sickbeard extends ServiceAbstract implements
             $systemCtl->enable(true);
         }
 
-        if ($object->get('enable')) {
+        if ($object2->get('enable')) {
 
-            if ($object->get('branch2') == "Please choose a branch") {
+            if ($object2->get('branch') == "Please choose a branch") {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "Please select a 2nd repository and branch"
@@ -112,7 +115,7 @@ class Sickbeard extends ServiceAbstract implements
                 return;
             }
 
-            if ($object->get('repo2') == "Please choose a repository" ) {
+            if ($object2->get('repo') == "Please choose a repository" ) {
                 throw new OMVException(
                     OMVErrorMsg::E_MISC_FAILURE,
                     "Please select a 2nd repository and branch"
@@ -140,5 +143,13 @@ class Sickbeard extends ServiceAbstract implements
             $this->eventMessagePath,
             [$this, 'setDirty']
         );
+
+        foreach (['instance1', 'instance2', 'forks'] as $subPath) {
+            $dispatcher->addListener(
+                OMV_NOTIFY_MODIFY,
+                implode('.', [$this->eventMessagePath, $subPath]),
+                [$this, 'setDirty']
+            );
+        }
     }
 }

@@ -1,0 +1,32 @@
+{
+        "type": "config",
+        "id": "conf.service.sickbeard.forks",
+        "title": "SickBeard",
+        "queryinfo": {
+                "xpath": "/config/services/sickbeard/forks",
+                "iterable": false
+        },
+        "properties": {
+                "fork": {
+                        "type": "array",
+                        "items": {
+                                "type": "object",
+                                "properties": {
+                                        "uuid": {
+                                                "type": "string",
+                                                "format": "uuidv4"
+                                        },
+                                        "name": {
+                                                "type": "string"
+                                        },
+                                        "fork": {
+                                                "type": "string"
+                                        },
+                                        "branches": {
+                                                "type": "array"
+                                        }
+                                }
+                        }
+                }
+        }
+}

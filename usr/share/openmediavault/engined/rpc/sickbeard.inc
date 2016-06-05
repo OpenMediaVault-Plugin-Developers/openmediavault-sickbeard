@@ -17,6 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+ //file_put_contents('filename.txt', print_r($b, true));
 
 namespace OMV\Engined\Rpc;
 
@@ -35,11 +36,16 @@ class Sickbeard extends ServiceAbstract
 
     private $dataModelPath = 'conf.service.sickbeard';
 
+    private $forksDataModelPath = 'conf.service.sickbeard.forks';
+
+    private $instance1DataModelPath = 'conf.service.sickbeard.instance1';
+
+    private $instance2DataModelPath = 'conf.service.sickbeard.instance2';
+
+
     private $dispatcher;
 
     private $eventMessagePath = 'org.openmediavault.conf.services.sickbeard';
-
-    private $dataModelPathForks = 'conf.service.sickbeard.forks';
 
     public function __construct(Database $database = null, Dispatcher $dispatcher = null)
     {
@@ -66,7 +72,7 @@ class Sickbeard extends ServiceAbstract
         $this->registerMethod("enumerateRepos");
 
         $this->registerMethod("getForks");
-        //$this->registerMethod("getFork");
+        $this->registerMethod("getFork");
         //$this->registerMethod("setFork");
         //$this->registerMethod("deleteFork");
 
@@ -82,6 +88,9 @@ class Sickbeard extends ServiceAbstract
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
         $object = $this->database->get($this->dataModelPath);
+
+        $object->remove('instances');
+        $object->remove('forks');
 
         return $object->getAssoc();
     }
@@ -104,7 +113,7 @@ class Sickbeard extends ServiceAbstract
     {
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
-        $object = $this->database->get($this->dataModelPath);
+        $object = $this->database->get($this->instance1DataModelPath);
 
         return $object->getAssoc();
     }
@@ -113,7 +122,7 @@ class Sickbeard extends ServiceAbstract
     {
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
-        $object = $this->database->get($this->dataModelPath);
+        $object = $this->database->get($this->instance2DataModelPath);
 
         return $object->getAssoc();
     }
@@ -123,7 +132,33 @@ class Sickbeard extends ServiceAbstract
     {
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
-        $object = $this->database->get($this->dataModelPath);
+        $objects = $this->database->get($this->forksDataModelPath);
+        //$forks = [];
+
+        //foreach ($objects as $object) {
+        //    $forks[] = $object->getAssoc();
+        //}
+
+        $test = $this->applyFilter(
+            $objects,
+            $params['start'],
+            $params['limit'],
+            $params['sortfield'],
+            $params['sortdir']
+        );
+        file_put_contents('/filename.txt', print_r($test, true));
+        return $this->applyFilter(
+            $objects,
+            $params['start'],
+            $params['limit'],
+            $params['sortfield'],
+            $params['sortdir']
+        );
+    }
+
+    public function getFork($params, $context)
+    {
+        $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
         // Validate the parameters of the RPC service method.
         $this->validateMethodParams(
@@ -131,29 +166,22 @@ class Sickbeard extends ServiceAbstract
             '{
                 "type"       : "object",
                 "properties" : {
-                    "start"     : { "type" : "integer" },
-                    "limit"     : { ' . $GLOBALS["OMV_JSONSCHEMA_COUNTFIELD"] . ' },
-                    "sortfield" : { ' . $GLOBALS["OMV_JSONSCHEMA_SORTFIELD"] . ' },
-                    "sortdir"   : { ' . $GLOBALS["OMV_JSONSCHEMA_SORTDIR"] . ' }
+                    "uuid" : { ' . $GLOBALS["OMV_JSONSCHEMA_UUID"] . ' }
                 }
             }'
         );
 
-        // Get configuration data.
-        //$objects = $this->database->get($this->dataModelPath->getList("forks"));
-        $objects = $object->get("forks");
+        // Get the configuration object.
+        $xpath = sprintf("%s[uuid='%s']", forksDataModelPath, $params["uuid"]);
+        $object = $this->database->get($this->xpath);
+        //$object = $xmlConfig->get($xpath);
 
-        // Filter the result.
-        return $this->applyFilter(
-            $objects,
-            $params["start"],
-            $params["limit"],
-            $params["sortfield"],
-            $params["sortdir"]
-        );
+        if (is_null($object)) {
+            throw new Exception('No directory for downloads set, please set one before enabling the service');
+        }
+
+        return $object;
     }
-
-
 
 
 
@@ -164,16 +192,14 @@ class Sickbeard extends ServiceAbstract
     {
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
+        
         // Get configuration data.
-        $objects = $this->database->get($this->dataModelPath);
+        $objects = $this->database->get($this->forksDataModelPath);
         $userRepos = $objects->getList("forks");
         //$userRepos = $objects->get("forks");
 
         if (is_null($userRepos)) {
-            throw new OMVException(
-                OMVErrorMsg::E_CONFIG_GET_OBJECT_FAILED,
-                $this->getForkXpath()
-            );
+            throw new Exception('No directory for downloads set, please set one before enabling the service');
         }
 
         // Add default repos and their branches. Do it here so users can't
@@ -182,7 +208,7 @@ class Sickbeard extends ServiceAbstract
             [
                 "uuid" => "11111111-2222-3333-4444-555555555555",
                 "name" => "Main Branch1",
-                "fork" => "https://github.com/midgetspy/Sick-Beard.git",
+                "fork" => "https://github.com/coach0742/Sick-Beard.git",
                 "branches" => [
                     "1080i",
                     "anime",

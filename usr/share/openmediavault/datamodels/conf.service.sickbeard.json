@@ -11,10 +11,6 @@
 			"type": "integer",
 			"default": -1
 		},
-                "enable": {
-                        "type": "boolean",
-                        "default": false
-                },
 	"instances": {
 		"type": "object",
 		"properties": {
@@ -137,7 +133,7 @@
 		}
 	},
 		"forks": {
-			"type": "array"
+			"type": "array",
 			"items": {
 				"type": "object",
 				"properties": {
