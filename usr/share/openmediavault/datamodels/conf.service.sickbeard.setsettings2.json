@@ -1,7 +1,7 @@
 {
 	"type": "config",
-	"id": "conf.service.sickbeard.instance2",
-	"title": "SickBeard",
+	"id": "conf.service.sickbeard.setsettings2",
+	"title": "SickBeard settings2",
 	"queryinfo": {
 		"xpath": "/config/services/sickbeard/instances/instance2",
 		"iterable": false
@@ -27,11 +27,12 @@
 			"type": "integer",
 			"minimum": 1025,
 			"maximum": 65535,
-			"default": 8082
+			"default": 8081
 		},
 		"mntentref": {
 			"type": "string",
-			"format": "uuidv4"
+			"format": "uuidv4",
+			"optional" : true
 		},
 		"db-folder": {
 			"type": "string"
@@ -62,4 +63,3 @@
 		}
 	}
 }
-

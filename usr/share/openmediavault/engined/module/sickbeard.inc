@@ -37,8 +37,10 @@ class Sickbeard extends ServiceAbstract implements
     private $database;
 
     private $dataModelPath = 'conf.service.sickbeard';
-    private $instance1DataModelPath = 'conf.service.sickbeard.instance1';
-    private $instance2DataModelPath = 'conf.service.sickbeard.instance2';
+
+    private $settings1DataModelPath = 'conf.service.sickbeard.setsettings1';
+
+    private $settings2DataModelPath = 'conf.service.sickbeard.setsettings2';
 
     private $eventMessagePath = 'org.openmediavault.conf.services.sickbeard';
 
@@ -60,7 +62,7 @@ class Sickbeard extends ServiceAbstract implements
 
     public function getStatus()
     {
-        $object = $this->database->get($this->instance1DataModelPath);
+        $object = $this->database->get($this->settings1DataModelPath);
         $systemCtl = new SystemCtl($this->serviceName);
 
         return [
@@ -80,8 +82,8 @@ class Sickbeard extends ServiceAbstract implements
 
     public function startService()
     {
-        $object1 = $this->database->get($this->instance1DataModelPath);
-        $object2 = $this->database->get($this->instance1DataModelPath);
+        $object1 = $this->database->get($this->settings1DataModelPath);
+        $object2 = $this->database->get($this->settings2DataModelPath);
 
         if ($object1->get('enable')) {
 

@@ -72,7 +72,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Backup1", {
             return;
         }
 
-        this.doAction("doRestore2");
+        this.doAction("doRestore1");
     },
 
     doAction: function(method) {
