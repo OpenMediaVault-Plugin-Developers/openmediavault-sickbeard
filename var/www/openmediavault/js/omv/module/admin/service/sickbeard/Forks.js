@@ -78,7 +78,7 @@ Ext.define("OMV.module.admin.service.sickbeard.Forks", {
             listeners: {
                 scope: this,
                 submit: function() {
-                    document.location.reload();
+                    this.doReload();
                 }
             }
         }).show();
