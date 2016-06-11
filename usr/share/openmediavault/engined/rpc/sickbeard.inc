@@ -144,6 +144,7 @@ class Sickbeard extends ServiceAbstract
         $this->validateMethodContext($context, ['role' => OMV_ROLE_ADMINISTRATOR]);
 
         if (empty($params['mntentref']) || $params['mntentref'] == "Select a volume or leave blank for default.") {
+            $params['mntentref'] = "Select a volume or leave blank for default.";
             $this->validateMethodParams($params, 'rpc.sickbeard.setsettings1');
             $params['db-folder'] = "/var/opt/sickbeard";
         } else {
