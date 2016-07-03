@@ -1,3 +1,9 @@
+openmediavault-sickbeard (3.2.1) stable; urgency=low
+
+  * OMV3.2 Version
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Sun, 03 Jul 2016 10:19:00 +0000
+
 openmediavault-sickbeard (3.2) unstable; urgency=low
 
   * Changed dependency of OMV Package to = 3.0.13 to avoid accidental
