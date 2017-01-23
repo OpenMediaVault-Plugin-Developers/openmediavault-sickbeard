@@ -30,10 +30,14 @@
 			"default": 8081
 		},
 		"mntentref": {
-			"type": "string",
-			"format": "uuidv4",
-			"optional" : true
-		},
+		    "type": "string",
+            "oneOf": [{
+                "type": "string",
+                "format": "uuidv4"
+            }, {
+                "maxLength": 0
+            }]
+        },
 		"db-folder": {
 			"type": "string"
 		},
